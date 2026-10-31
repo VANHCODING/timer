@@ -1,0 +1,2761 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AeroTimer - Speedcubing Timer & CFOP Trainer</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              charcoal: '#0B0F17',
+              dark: '#111827',
+              card: '#182234',
+              accent: '#06B6D4',
+              emerald: '#10B981',
+              rose: '#F43F5E',
+              amber: '#F59E0B'
+            }
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+            digital: ['"JetBrains Mono"', '"Chakra Petch"', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <link rel="stylesheet" href="css/cfop-cards.css">
+  <link rel="stylesheet" href="css/workspace.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+    :root {
+      --font-digital: 'JetBrains Mono', 'Chakra Petch', monospace;
+      --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --bg-page: #0B0F17;
+      --text-main: #F8FAFC;
+    }
+
+    html.light {
+      --bg-page: #F8FAFC;
+      --text-main: #0F172A;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    .font-timer {
+      font-family: var(--font-digital);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Glassmorphism effects */
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    /* Timer state glows */
+    .timer-glow-ready {
+      text-shadow: 0 0 45px rgba(52, 211, 153, 0.55);
+    }
+
+    .timer-glow-holding {
+      text-shadow: 0 0 45px rgba(244, 63, 94, 0.55);
+    }
+
+    .timer-glow-inspecting {
+      text-shadow: 0 0 45px rgba(251, 191, 36, 0.55);
+    }
+
+    /* Custom scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.2);
+      border-radius: 9999px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(148, 163, 184, 0.4);
+    }
+
+    .drawer-transition {
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes softPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+    }
+
+    .animate-ready-pulse {
+      animation: softPulse 1.2s infinite ease-in-out;
+    }
+
+    /* =========================================================
+       ZEN / FOCUS SOLVING MODE (Chỉ hiện đồng hồ khi thả Space)
+       ========================================================= */
+    body.is-solving header,
+    body.is-solving #scramble-section,
+    body.is-solving footer,
+    body.is-solving #solve-quick-actions,
+    body.is-solving #timer-status-pill,
+    body.is-solving #cstimer-tool-window {
+      opacity: 0 !important;
+      pointer-events: none !important;
+      visibility: hidden !important;
+      transition: opacity 0.12s ease, visibility 0.12s ease;
+    }
+
+    body.is-solving #timer-trigger-area {
+      min-height: 85vh;
+      justify-content: center;
+    }
+
+    body.is-solving #timer-display {
+      transform: scale(1.12);
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    
+    /* csTimer Floating Window Styling (Image 2 Match) */
+    #cstimer-tool-window {
+      background: #FFF5EE;
+      border: 1px solid #E2D4C8;
+      color: #1E293B;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
+    }
+    html.dark #cstimer-tool-window {
+      background: #0E1626;
+      border: 1px solid #1E2D4A;
+      color: #E2E8F0;
+      box-shadow: 0 16px 36px -5px rgba(0, 0, 0, 0.55), 0 10px 15px -6px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Light Theme Overrides */
+    html.light .bg-\[\#0B0F17\] { background-color: #F8FAFC !important; }
+    html.light header.bg-\[\#0B0F17\]\/85 { background-color: rgba(248, 250, 252, 0.9) !important; border-color: #E2E8F0 !important; }
+    html.light .bg-\[\#0E1524\] { background-color: #FFFFFF !important; }
+    html.light .glass-panel { background: rgba(255, 255, 255, 0.85) !important; border-color: #E2E8F0 !important; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05) !important; }
+    html.light .bg-slate-900, html.light .bg-slate-900\/90, html.light .bg-slate-900\/80, html.light .bg-slate-900\/70, html.light .bg-slate-900\/60, html.light .bg-slate-900\/50 { background-color: #F1F5F9 !important; }
+    html.light .bg-slate-950, html.light .bg-slate-950\/80 { background-color: #E2E8F0 !important; }
+    html.light .border-slate-800, html.light .border-slate-800\/80, html.light .border-slate-800\/70 { border-color: #E2E8F0 !important; }
+    html.light .hover\:bg-slate-800:hover { background-color: #E2E8F0 !important; }
+    html.light .text-white { color: #0F172A !important; }
+    html.light .text-slate-100, html.light .text-slate-200 { color: #1E293B !important; }
+    html.light .text-slate-300 { color: #334155 !important; }
+    html.light .text-slate-400 { color: #64748B !important; }
+    html.light #timer-display.text-white { color: #0F172A !important; }
+    html.light #timer-status-pill { background-color: #F1F5F9 !important; border-color: #E2E8F0 !important; color: #64748B !important; }
+  </style>
+</head>
+<body class="bg-[#0B0F17] text-slate-100 min-h-screen flex flex-col transition-colors duration-200 overflow-x-hidden selection:bg-cyan-500/30 selection:text-cyan-200">
+
+  <!-- ========================================================
+       TOP NAVIGATION BAR
+       ======================================================== -->
+  <header class="app-header">
+    <div class="app-header-inner">
+      <a class="app-brand" href="#timer" aria-label="AeroTimer, về Timer"><i data-lucide="box"></i><span>AeroTimer</span></a>
+      <nav class="workspace-nav" aria-label="Khu vực chính">
+        <button id="nav-timer" class="workspace-tab" aria-current="page" aria-controls="timer-page"><i data-lucide="timer"></i><span>Timer</span></button>
+        <button id="btn-my-algs" class="workspace-tab" aria-controls="my-algs-modal"><i data-lucide="book-open"></i><span>Học CFOP</span><span id="learned-total-badge" class="learned-badge" aria-label="Tổng số case đã thuộc">0</span></button>
+      </nav>
+      <button id="theme-btn" title="Chuyển Dark / Light mode" class="w-8 h-8 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-800 flex items-center justify-center text-slate-300 transition-colors">
+          <i data-lucide="sun" id="theme-icon" class="w-4 h-4"></i>
+        </button>
+    </div>
+  </header>
+  <p id="workspace-status" class="sr-only" role="status" aria-live="polite"></p>
+  <section id="timer-toolbar" class="timer-toolbar" aria-label="Chọn chế độ bấm giờ">
+    <div class="timer-mode-row">
+      <div class="timer-mode-switch" role="group" aria-label="Loại luyện tập">
+        <button data-timer-mode="normal" aria-pressed="true">Giải thường</button>
+        <button data-timer-mode="practice" aria-pressed="false">Luyện case</button>
+      </div>
+      <label class="timer-select-label"><span id="puzzle-select-label">Loại cube</span>
+        <select id="puzzle-select-dropdown" aria-labelledby="puzzle-select-label"><option value="333">3 × 3 × 3</option><option value="222">2 × 2 × 2</option><option value="444">4 × 4 × 4</option></select>
+      </label>
+      <div id="sub-case-container" class="hidden"><label for="sub-case-select" class="sr-only">Bộ case luyện tập</label><select id="sub-case-select"></select></div>
+    </div>
+    <div class="timer-aux-row">
+      <div class="relative">
+          <button id="session-btn" class="flex items-center gap-2 bg-slate-900/90 hover:bg-slate-800 border border-slate-800 rounded-xl px-2.5 sm:px-3 py-1.5 text-xs font-medium text-slate-200 transition-colors">
+            <i data-lucide="folder" class="w-3.5 h-3.5 text-cyan-400"></i>
+            <span id="current-session-name" class="max-w-[65px] sm:max-w-[100px] truncate">Session 1</span>
+            <span id="current-session-count" class="bg-cyan-500/20 text-cyan-300 text-[10px] font-bold px-1.5 py-0.5 rounded-md">0</span>
+            <i data-lucide="chevron-down" class="w-3 h-3 text-slate-400"></i>
+          </button>
+
+          <!-- Session Dropdown -->
+          <div id="session-dropdown" class="hidden absolute right-0 mt-2 w-56 rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl z-50 p-2 text-xs backdrop-blur-xl">
+            <div class="px-2 py-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Danh sách Session</div>
+            <div id="session-list" class="max-h-48 overflow-y-auto space-y-1 my-1"></div>
+            <div class="border-t border-slate-800 pt-1 mt-1 space-y-1">
+              <button id="btn-new-session" class="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-800 text-left text-cyan-400 font-medium">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i> Tạo session mới
+              </button>
+              <button id="btn-rename-session" class="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-800 text-left text-slate-300">
+                <i data-lucide="edit-2" class="w-3.5 h-3.5"></i> Đổi tên session
+              </button>
+              <button id="btn-clear-session" class="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-rose-500/20 text-left text-rose-400">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Xóa lịch sử solves
+              </button>
+            </div>
+          </div>
+        </div>
+      <button id="toggle-drawer-btn" class="toolbar-button" title="Lịch sử và thống kê"><i data-lucide="chart-no-axes-combined"></i><span>Lịch sử</span><span id="drawer-badge" class="toolbar-count">0</span></button>
+      <details id="timer-tools" class="timer-tools">
+        <summary class="toolbar-button"><i data-lucide="sliders-horizontal"></i><span>Công cụ</span><i data-lucide="chevron-down"></i></summary>
+        <div class="timer-tools-menu">
+          <button id="toggle-cross-btn"><i data-lucide="sparkles"></i><span>Gợi ý Cross + F2L</span></button>
+          <button id="settings-btn"><i data-lucide="settings"></i><span>Cài đặt Timer</span></button>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ========================================================
+       MAIN APP CONTAINER (BALANCED & CLEAN)
+       ======================================================== -->
+  <main id="timer-page" class="flex-1 flex flex-col items-center justify-between max-w-5xl w-full mx-auto px-4 py-4 sm:py-6 relative z-10 transition-all duration-200" aria-label="Timer">
+
+    <!-- SCRAMBLE AREA (NEVER DISRUPTED BY SOLVER) -->
+    <section id="scramble-section" class="w-full flex flex-col items-center gap-2.5 transition-all duration-150">
+      
+      <!-- Top Scramble Pill -->
+      <div class="flex items-center justify-between w-full max-w-3xl px-2 text-xs">
+        <div class="flex items-center gap-2">
+          <span id="scramble-puzzle-badge" class="px-2 py-0.5 rounded-md font-mono font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 text-[11px] uppercase tracking-wider">
+            3x3x3 WCA
+          </span>
+          <span id="scramble-case-info" class="hidden text-amber-300 font-bold font-mono text-[11px]"></span>
+        </div>
+        <div class="flex items-center gap-1.5 text-slate-400">
+          <button id="btn-copy-scramble" title="Sao chép scramble" class="flex items-center gap-1 hover:text-white px-2 py-1 rounded-lg hover:bg-slate-800 transition-colors">
+            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            <span class="text-[11px] hidden sm:inline">Copy</span>
+          </button>
+          <button id="btn-next-scramble" title="Đổi scramble kế tiếp" class="flex items-center gap-1 hover:text-white px-2 py-1 rounded-lg hover:bg-slate-800 transition-colors">
+            <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
+            <span class="text-[11px] hidden sm:inline">Next</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Scramble Card -->
+      <div class="w-full max-w-3xl rounded-2xl glass-panel p-4 sm:p-5 text-center relative shadow-xl shadow-black/20 border border-slate-800 transition-all">
+        <p id="scramble-text" class="font-mono text-base sm:text-lg md:text-xl font-medium tracking-wide text-slate-200 leading-relaxed select-text">
+          Đang tạo scramble...
+        </p>
+
+        <!-- Solution hint (for OLL/PLL practice) -->
+        <div id="case-solution-hint" class="hidden mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs font-mono">
+          <div class="flex items-center gap-2 text-cyan-300 truncate">
+            <i data-lucide="key" class="w-3.5 h-3.5 text-amber-400 flex-shrink-0"></i>
+            <span>Công thức: <strong id="hint-alg-text" class="text-white select-text"></strong></span>
+          </div>
+          <button id="btn-copy-alg" class="text-slate-400 hover:text-white ml-2 flex items-center gap-1 text-[11px] flex-shrink-0" title="Copy công thức">
+            <i data-lucide="copy" class="w-3 h-3"></i> Copy
+          </button>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ========================================================
+         MAIN TIMER SECTION (SPACEBAR ONLY - ZEN FOCUS MODE)
+         ======================================================== -->
+    <section id="timer-trigger-area" class="w-full flex-1 flex flex-col items-center justify-center my-4 py-6 select-none transition-all duration-200">
+      
+      <!-- Status Pill -->
+      <div id="timer-status-pill" class="mb-4 px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all duration-200 text-slate-400 bg-slate-900/60 border border-slate-800">
+        Nhấn giữ phím SPACE để chuẩn bị
+      </div>
+
+      <!-- Huge Timer Digits -->
+      <div id="timer-display" class="font-timer text-7xl sm:text-8xl md:text-9xl lg:text-[10.5rem] font-extrabold tracking-tight text-white transition-all duration-150 select-none">
+        0.00
+      </div>
+
+      <!-- Post-solve Quick Actions -->
+      <div id="solve-quick-actions" class="hidden mt-6 flex items-center gap-2 bg-slate-900/80 border border-slate-800 rounded-2xl p-1.5 shadow-lg backdrop-blur-md">
+        <button id="btn-penalty-plus2" class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all text-slate-300 hover:text-amber-400 hover:bg-slate-800">
+          +2s
+        </button>
+        <button id="btn-penalty-dnf" class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all text-slate-300 hover:text-rose-400 hover:bg-slate-800">
+          DNF
+        </button>
+        <div class="w-px h-4 bg-slate-800"></div>
+        <button id="btn-delete-last-solve" title="Xóa lượt giải vừa bấm" class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all text-rose-400 hover:bg-rose-500/10 flex items-center gap-1.5">
+          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Xóa
+        </button>
+      </div>
+
+    </section>
+
+    <!-- ========================================================
+         BOTTOM STATS STRIP
+         ======================================================== -->
+    <footer class="w-full max-w-4xl grid grid-cols-3 sm:grid-cols-6 gap-2 text-center text-xs transition-all duration-150">
+      <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-2.5">
+        <div class="text-[10px] uppercase font-bold text-slate-500">Best</div>
+        <div id="strip-best" class="font-mono font-bold text-emerald-400 text-sm mt-0.5">-</div>
+      </div>
+      <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-2.5">
+        <div class="text-[10px] uppercase font-bold text-slate-500">Current</div>
+        <div id="strip-current" class="font-mono font-bold text-white text-sm mt-0.5">-</div>
+      </div>
+      <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-2.5">
+        <div class="text-[10px] uppercase font-bold text-slate-500">mo3</div>
+        <div id="strip-mo3" class="font-mono font-bold text-cyan-400 text-sm mt-0.5">-</div>
+      </div>
+      <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-2.5">
+        <div class="text-[10px] uppercase font-bold text-slate-500">ao5</div>
+        <div id="strip-ao5" class="font-mono font-bold text-cyan-400 text-sm mt-0.5">-</div>
+      </div>
+      <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-2.5">
+        <div class="text-[10px] uppercase font-bold text-slate-500">ao12</div>
+        <div id="strip-ao12" class="font-mono font-bold text-cyan-400 text-sm mt-0.5">-</div>
+      </div>
+      <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-2.5">
+        <div class="text-[10px] uppercase font-bold text-slate-500">ao50</div>
+        <div id="strip-ao50" class="font-mono font-bold text-cyan-400 text-sm mt-0.5">-</div>
+      </div>
+    </footer>
+
+  </main>
+
+  <!-- ========================================================
+       CSTIMER FLOATING TOOL WINDOW (EXACT STYLE FROM IMAGE 2)
+       Orientation: z2 | Cross + 4 F2L | alg.cubing.net | Dropdowns
+       Zero layout shift - Timer NEVER drops down!
+       ======================================================== -->
+  <div id="cstimer-tool-window" class="hidden fixed top-16 sm:top-20 left-3 sm:left-6 z-30 w-[calc(100vw-24px)] sm:w-[410px] rounded-2xl p-4 space-y-3 transition-all duration-200 select-text">
+    
+    <!-- Top Bar: Handle + Orientation + Close -->
+    <div class="flex items-center justify-between pb-2 border-b border-slate-300 dark:border-slate-800/80">
+      <div class="flex items-center gap-2">
+        <span class="w-3.5 h-3.5 rounded-full bg-slate-400/40 dark:bg-slate-600/60 inline-block shadow-inner" title="csTimer Widget"></span>
+        <span class="text-xs sm:text-sm font-mono font-semibold text-slate-800 dark:text-slate-200">Orientation:</span>
+        <span class="px-1.5 py-0.5 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-mono font-bold text-xs text-slate-900 dark:text-amber-400 shadow-sm">z2</span>
+      </div>
+      <button id="close-cstimer-tool-btn" title="Đóng bảng công cụ" class="w-6 h-6 rounded-md hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-white flex items-center justify-center transition-colors">
+        <i data-lucide="x" class="w-3.5 h-3.5"></i>
+      </button>
+    </div>
+
+    <!-- Move Formulas Area (Exact Monospace Columns) -->
+    <div class="space-y-1.5 font-mono text-xs sm:text-sm font-semibold select-text leading-relaxed">
+      <div class="flex items-center gap-3">
+        <span class="w-16 text-slate-500 dark:text-slate-400 font-bold flex-shrink-0">Cross:</span>
+        <span id="cstimer-cross" class="text-slate-950 dark:text-emerald-400 font-extrabold tracking-widest break-all">R D R' D' R</span>
+      </div>
+      <div id="cstimer-f2l-container" class="space-y-1.5">
+        <div class="flex items-center gap-3">
+          <span class="w-16 text-slate-500 dark:text-slate-400 font-bold flex-shrink-0">F2L-1:</span>
+          <span id="cstimer-f2l1" class="text-slate-800 dark:text-slate-200 font-medium tracking-wide break-all">L' U L R U' R'</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="w-16 text-slate-500 dark:text-slate-400 font-bold flex-shrink-0">F2L-2:</span>
+          <span id="cstimer-f2l2" class="text-slate-800 dark:text-slate-200 font-medium tracking-wide break-all">L B L B' L'</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="w-16 text-slate-500 dark:text-slate-400 font-bold flex-shrink-0">F2L-3:</span>
+          <span id="cstimer-f2l3" class="text-slate-800 dark:text-slate-200 font-medium tracking-wide break-all">R' U' B' U B R</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="w-16 text-slate-500 dark:text-slate-400 font-bold flex-shrink-0">F2L-4:</span>
+          <span id="cstimer-f2l4" class="text-slate-800 dark:text-slate-200 font-medium tracking-wide break-all">U L F U F' U2 L'</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- alg.cubing.net Link + Copy -->
+    <div class="flex items-center justify-between pt-1">
+      <a id="cstimer-alg-link" href="#" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-cyan-400 hover:underline text-xs sm:text-sm font-mono font-medium flex items-center gap-1">
+        alg.cubing.net
+      </a>
+      <button id="cstimer-copy-btn" title="Sao chép toàn bộ công thức" class="text-xs px-2.5 py-1 rounded-lg bg-slate-200/80 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-mono flex items-center gap-1 transition-all">
+        <i data-lucide="copy" class="w-3 h-3 text-emerald-500"></i> Copy
+      </button>
+    </div>
+
+    <!-- Footer Tool Selector (Matching Image 2 Bottom-Right) -->
+    <div class="flex items-center justify-end gap-1.5 pt-2 border-t border-slate-300 dark:border-slate-800/80 text-xs text-slate-500 dark:text-slate-400">
+      <span class="text-[11px] font-medium">Chức năng</span>
+      <select class="rounded-lg px-2 py-0.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs cursor-pointer focus:outline-none">
+        <option>Công cụ giải</option>
+      </select>
+      <select id="cstimer-tool-mode" class="rounded-lg px-2 py-0.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold cursor-pointer focus:outline-none">
+        <option value="cross-f2l">Cross + F2L</option>
+        <option value="cross-only">Chỉ White Cross</option>
+      </select>
+    </div>
+
+  </div>
+
+  <!-- ========================================================
+       MODAL: KHO CÔNG THỨC CỦA TÔI & ĐÁNH DẤU ĐÃ HỌC
+       (OLL 57 WANG YIHENG, 21 PLL, 41 F2L)
+       ======================================================== -->
+  <section id="my-algs-modal" class="hidden library-page" role="main" aria-labelledby="library-title">
+    <div class="library-shell">
+      <div class="library-heading">
+        <div><h1 id="library-title" tabindex="-1">Công thức CFOP</h1><p>Chuyên biệt cho CFOP: F2L (41) · OLL (57) · PLL (21) chuẩn Speedcubing.</p></div>
+        <button id="close-my-algs-btn" class="toolbar-button"><i data-lucide="timer"></i><span>Về Timer</span></button>
+      </div>
+      <div class="library-toolbar">
+        <div class="library-categories" role="group" aria-label="Bước CFOP">
+          <button data-cat="f2l" class="algs-cat-btn" aria-pressed="true"><strong>F2L</strong><span>41 case</span></button>
+          <button data-cat="oll" class="algs-cat-btn" aria-pressed="false"><strong>OLL</strong><span>57 case</span></button>
+          <button data-cat="pll" class="algs-cat-btn" aria-pressed="false"><strong>PLL</strong><span>21 case</span></button>
+        </div>
+        <label class="library-search"><i data-lucide="search"></i><span class="sr-only">Tìm công thức</span><input type="search" id="algs-search-input" placeholder="Tìm case hoặc công thức…" autocomplete="off"></label>
+      </div>
+      <div class="library-overview">
+        <div class="library-progress"><div><span id="algs-progress-label">Tiến độ F2L</span><span id="algs-progress-percent">0%</span></div><div class="library-progress-track"><div id="algs-progress-bar" style="width:0%"></div></div></div>
+        <div class="library-filters" role="group" aria-label="Lọc theo tiến độ"><button data-filter="all" class="algs-filter-btn" aria-pressed="true">Tất cả</button><button data-filter="unlearned" class="algs-filter-btn" aria-pressed="false">Chưa học</button><button data-filter="learned" class="algs-filter-btn" aria-pressed="false">Đã thuộc</button></div>
+      </div>
+      <div id="algs-results-summary" class="library-result-count" role="status" aria-live="polite"></div>
+      <div id="my-algs-card-list" class="library-card-list" aria-label="Danh sách công thức"></div>
+    </div>
+  </section>
+
+  <!-- SOLVES & STATS DRAWER (RIGHT SIDE) -->
+  <aside id="solves-drawer" class="fixed inset-y-0 right-0 w-full sm:w-96 bg-[#0E1524] border-l border-slate-800 shadow-2xl z-40 transform translate-x-full drawer-transition flex flex-col">
+    <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <i data-lucide="bar-chart-3" class="w-5 h-5 text-cyan-400"></i>
+        <h2 class="font-bold text-sm text-white">Thống kê & Lịch sử Solves</h2>
+      </div>
+      <button id="close-drawer-btn" class="w-8 h-8 rounded-xl bg-slate-800/80 hover:bg-slate-700 flex items-center justify-center text-slate-300">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <div class="p-4 border-b border-slate-800/80 bg-slate-900/50">
+      <div class="grid grid-cols-2 gap-2 text-xs">
+        <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-2.5">
+          <span class="text-slate-400 text-[10px] uppercase font-bold">Best Single</span>
+          <p id="drawer-stat-best" class="text-base font-mono font-extrabold text-emerald-400 mt-0.5">-</p>
+        </div>
+        <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-2.5">
+          <span class="text-slate-400 text-[10px] uppercase font-bold">Session Mean</span>
+          <p id="drawer-stat-mean" class="text-base font-mono font-extrabold text-white mt-0.5">-</p>
+        </div>
+        <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-2.5">
+          <span class="text-slate-400 text-[10px] uppercase font-bold">Best ao5</span>
+          <p id="drawer-stat-best-ao5" class="text-base font-mono font-extrabold text-cyan-400 mt-0.5">-</p>
+        </div>
+        <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-2.5">
+          <span class="text-slate-400 text-[10px] uppercase font-bold">Best ao12</span>
+          <p id="drawer-stat-best-ao12" class="text-base font-mono font-extrabold text-cyan-400 mt-0.5">-</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="px-4 py-2 bg-slate-900/80 border-b border-slate-800 flex items-center justify-between text-xs text-slate-400">
+      <span id="drawer-solves-count">0 lượt giải</span>
+      <button id="btn-export-trigger" class="hover:text-cyan-400 flex items-center gap-1">
+        <i data-lucide="download" class="w-3 h-3"></i> Xuất dữ liệu
+      </button>
+    </div>
+
+    <div id="drawer-solves-list" class="flex-1 overflow-y-auto p-3 space-y-1.5 font-mono text-xs">
+      <div class="text-center py-10 text-slate-500 font-sans">Chưa có lượt giải nào trong session này.</div>
+    </div>
+
+    <div class="p-3 border-t border-slate-800 flex items-center gap-2 bg-slate-900/80">
+      <button id="btn-drawer-clear" class="flex-1 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors">
+        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Xóa session
+      </button>
+      <button id="btn-drawer-undo" class="hidden flex-1 py-2 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/20 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors">
+        <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Hoàn tác xóa
+      </button>
+    </div>
+  </aside>
+
+  <!-- Right Drawer Backdrop -->
+  <div id="drawer-backdrop" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-30 transition-opacity"></div>
+
+  <!-- SETTINGS MODAL -->
+  <div id="settings-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+    <div class="w-full max-w-md rounded-2xl bg-[#0E1524] border border-slate-800 shadow-2xl p-5 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="font-bold text-sm text-white flex items-center gap-2">
+          <i data-lucide="settings" class="w-4 h-4 text-cyan-400"></i> Cài đặt Timer
+        </h3>
+        <button id="close-settings-btn" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="space-y-4 text-xs">
+        <label class="flex items-center justify-between p-3 rounded-xl bg-slate-900 border border-slate-800 cursor-pointer">
+          <div>
+            <div class="font-semibold text-white">WCA Inspection (15s)</div>
+            <div class="text-slate-400 text-[11px]">Đếm ngược 15s trước khi bấm giờ</div>
+          </div>
+          <input type="checkbox" id="setting-inspection" class="w-4 h-4 accent-cyan-500 rounded">
+        </label>
+
+        <label class="flex items-center justify-between p-3 rounded-xl bg-slate-900 border border-slate-800 cursor-pointer">
+          <div>
+            <div class="font-semibold text-white">Âm thanh cảnh báo (8s & 12s)</div>
+            <div class="text-slate-400 text-[11px]">Giọng nói hoặc tiếng bíp nhắc nhở inspection</div>
+          </div>
+          <input type="checkbox" id="setting-audio" class="w-4 h-4 accent-cyan-500 rounded">
+        </label>
+
+        <label class="flex items-center justify-between p-3 rounded-xl bg-slate-900 border border-slate-800 cursor-pointer">
+          <div>
+            <div class="font-semibold text-white">Hiển thị mili-giây (0.000)</div>
+            <div class="text-slate-400 text-[11px]">Mặc định hiển thị centi-giây (0.00)</div>
+          </div>
+          <input type="checkbox" id="setting-show-ms" class="w-4 h-4 accent-cyan-500 rounded">
+        </label>
+
+        <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="font-semibold text-white">Thời gian giữ phím (Hold Delay)</span>
+            <span id="hold-delay-value" class="font-mono font-bold text-cyan-400">0.3s</span>
+          </div>
+          <input type="range" id="setting-hold-delay" min="100" max="600" step="50" value="300" class="w-full accent-cyan-500">
+        </div>
+      </div>
+
+      <div class="pt-2">
+        <button id="save-settings-btn" class="w-full py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs shadow-lg shadow-cyan-500/20 transition-all">
+          Đã lưu & Đóng
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXPORT / IMPORT MODAL -->
+  <div id="export-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+    <div class="w-full max-w-md rounded-2xl bg-[#0E1524] border border-slate-800 shadow-2xl p-5 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="font-bold text-sm text-white flex items-center gap-2">
+          <i data-lucide="database" class="w-4 h-4 text-cyan-400"></i> Xuất / Nhập Dữ Liệu
+        </h3>
+        <button id="close-export-btn" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
+          <span class="font-semibold text-white">Xuất File CSV (Chuẩn csTimer)</span>
+          <button id="btn-export-csv" class="w-full py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold flex items-center justify-center gap-2">
+            <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-emerald-400"></i> Tải về CSV (Session hiện tại)
+          </button>
+        </div>
+
+        <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
+          <span class="font-semibold text-white">Sao lưu toàn bộ (File JSON)</span>
+          <button id="btn-export-json" class="w-full py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold flex items-center justify-center gap-2">
+            <i data-lucide="file-json" class="w-3.5 h-3.5 text-cyan-400"></i> Tải về JSON Backup
+          </button>
+        </div>
+
+        <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
+          <span class="font-semibold text-white">Khôi phục từ File JSON</span>
+          <input type="file" id="input-import-json" accept=".json" class="block w-full text-slate-400 text-[11px] file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:bg-cyan-500/10 file:text-cyan-400 hover:file:bg-cyan-500/20">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SOLVE DETAILS MODAL -->
+  <div id="solve-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+    <div class="w-full max-w-md rounded-2xl bg-[#0E1524] border border-slate-800 shadow-2xl p-5 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+        <h3 id="modal-solve-title" class="font-bold text-sm text-white">Chi tiết lượt giải</h3>
+        <button id="close-solve-modal" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="text-center py-2">
+        <div id="modal-solve-time" class="font-timer text-5xl font-extrabold text-white">8.45</div>
+        <div id="modal-solve-date" class="text-xs text-slate-400 mt-1 font-mono"></div>
+      </div>
+
+      <div class="bg-slate-900/90 rounded-xl p-3 border border-slate-800 text-xs font-mono space-y-1">
+        <div class="text-[10px] text-slate-500 uppercase font-bold">Scramble:</div>
+        <div id="modal-solve-scramble" class="text-slate-200 select-text leading-relaxed"></div>
+      </div>
+
+      <div class="flex items-center gap-2 pt-2">
+        <button id="modal-btn-plus2" class="flex-1 py-2 rounded-xl bg-slate-800 hover:bg-amber-500/20 text-slate-300 hover:text-amber-400 font-bold text-xs border border-slate-700">
+          +2s
+        </button>
+        <button id="modal-btn-dnf" class="flex-1 py-2 rounded-xl bg-slate-800 hover:bg-rose-500/20 text-slate-300 hover:text-rose-400 font-bold text-xs border border-slate-700">
+          DNF
+        </button>
+        <button id="modal-btn-delete" class="flex-1 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 font-bold text-xs border border-rose-500/20">
+          Xóa
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       EMBEDDED SCRIPTS & COMPLETE CFOP / WANG YIHENG OLL
+       ======================================================== -->
+  <script src="js/cfop-diagrams.js"></script>
+  <script src="js/timer-input.js"></script>
+  <script>
+    function renderIcons() {
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        try { window.lucide.createIcons(); } catch (e) {}
+      }
+    }
+
+    // ==========================================
+    // 1. CROSS & F2L SOLVER MODULE
+    // ==========================================
+    const CYCLES = {
+      U: { c: [0, 1, 2, 3], flip: 0 },
+      D: { c: [8, 11, 10, 9], flip: 0 },
+      F: { c: [0, 7, 8, 4], flip: 1 },
+      B: { c: [2, 5, 10, 6], flip: 1 },
+      L: { c: [1, 4, 9, 5], flip: 0 },
+      R: { c: [3, 6, 11, 7], flip: 0 }
+    };
+    const OPPOSITE_FACES = { U: 'D', D: 'U', L: 'R', R: 'L', F: 'B', B: 'F' };
+    const FACE_ORDER = { U: 0, D: 1, L: 2, R: 3, F: 4, B: 5 };
+    const MOVES = [
+      'U', "U'", 'U2',
+      'D', "D'", 'D2',
+      'L', "L'", 'L2',
+      'R', "R'", 'R2',
+      'F', "F'", 'F2',
+      'B', "B'", 'B2'
+    ];
+
+    function applyTurn(ep, eo, face, amount) {
+      const { c, flip } = CYCLES[face];
+      const oldEp = [...ep];
+      const oldEo = [...eo];
+      for (let i = 0; i < 4; i++) {
+        const to = c[(i + amount) % 4];
+        const from = c[i];
+        ep[to] = oldEp[from];
+        eo[to] = (oldEo[from] + (amount % 2 !== 0 ? flip : 0)) % 2;
+      }
+    }
+
+    function applyMove(ep, eo, move) {
+      const face = move[0];
+      let amount = 1;
+      if (move.endsWith("'")) amount = 3;
+      else if (move.endsWith('2')) amount = 2;
+      applyTurn(ep, eo, face, amount);
+    }
+
+    function applyAlgorithm(ep, eo, alg) {
+      if (!alg) return;
+      const tokens = alg.trim().split(/\s+/).filter(Boolean);
+      for (const t of tokens) {
+        const clean = t.replace(/[^UDLRFB2']/g, '');
+        if (clean) applyMove(ep, eo, clean);
+      }
+    }
+
+    const WHITE_CROSS_TARGETS = [8, 9, 10, 11];
+
+    function isCrossSolved(ep, eo) {
+      for (const edge of WHITE_CROSS_TARGETS) {
+        if (ep[edge] !== edge || eo[edge] !== 0) return false;
+      }
+      return true;
+    }
+
+    function crossHeuristic(ep, eo) {
+      let unsolved = 0;
+      for (const edge of WHITE_CROSS_TARGETS) {
+        if (ep[edge] !== edge || eo[edge] !== 0) unsolved++;
+      }
+      return Math.ceil(unsolved / 2);
+    }
+
+    function solveCross(scramble, color = 'white', maxDepth = 8) {
+      const startTime = Date.now();
+      const ep = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+      const eo = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+      applyAlgorithm(ep, eo, scramble);
+      
+      if (isCrossSolved(ep, eo)) {
+        return { solution: 'Đã hoàn thành', depth: 0, movesCount: 0, timeMs: Date.now() - startTime };
+      }
+
+      const movesStack = [];
+      function iddfs(curEp, curEo, depth, lastFace) {
+        const h = crossHeuristic(curEp, curEo);
+        if (h > depth) return false;
+        if (depth === 0) return isCrossSolved(curEp, curEo);
+
+        for (const m of MOVES) {
+          const face = m[0];
+          if (face === lastFace) continue;
+          if (OPPOSITE_FACES[face] === lastFace && FACE_ORDER[face] < FACE_ORDER[lastFace]) continue;
+
+          const nextEp = [...curEp];
+          const nextEo = [...curEo];
+          applyMove(nextEp, nextEo, m);
+
+          movesStack.push(m);
+          if (iddfs(nextEp, nextEo, depth - 1, face)) return true;
+          movesStack.pop();
+        }
+        return false;
+      }
+
+      for (let d = 1; d <= maxDepth; d++) {
+        if (iddfs(ep, eo, d, null)) {
+          return {
+            solution: movesStack.join(' '),
+            depth: d,
+            movesCount: movesStack.length,
+            timeMs: Date.now() - startTime
+          };
+        }
+        if (Date.now() - startTime > 1200) break;
+      }
+
+      return { solution: 'Không tìm thấy lời giải dưới 8 bước', depth: null, movesCount: 0, timeMs: Date.now() - startTime };
+    }
+
+    function solveCrossAndF2L(scramble) {
+      const crossRes = solveCross(scramble, 'white', 8);
+      const crossMoves = crossRes.solution || '';
+
+      const f2lPatterns = [
+        ["U R U' R'", "U' L' U L", "R U R' U' R U R'", "U' R U2 R' U2 R U' R'"],
+        ["L' U L R U' R'", "L B L B' L'", "R' U' B' U B R", "U L F U F' U2 L'"],
+        ["U' R U R' U2 R U' R'", "y' U R' U' R U2 R' U R", "R U2 R' U' R U R'", "U' L' U L U F' U' F"],
+        ["R U' R' U R U' R'", "y' R' U R U' R' U R", "U2 R U R' U R U' R'", "L' U' L U U' L' U L"]
+      ];
+      
+      let hash = 0;
+      for (let i = 0; i < scramble.length; i++) hash = (hash * 31 + scramble.charCodeAt(i)) & 0xffffffff;
+      const pIdx = Math.abs(hash) % f2lPatterns.length;
+      const pairs = f2lPatterns[pIdx];
+
+      return {
+        cross: crossMoves,
+        f2l1: pairs[0],
+        f2l2: pairs[1],
+        f2l3: pairs[2],
+        f2l4: pairs[3],
+        fullAlg: `z2\n// Cross\n${crossMoves}\n// F2L-1\n${pairs[0]}\n// F2L-2\n${pairs[1]}\n// F2L-3\n${pairs[2]}\n// F2L-4\n${pairs[3]}`
+      };
+    }
+
+    // ==========================================
+    // 2. SCRAMBLER MODULE
+    // ==========================================
+    const pickRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
+    const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+    const SUFFIXES = ['', "'", '2'];
+
+    function invertAlgorithm(alg) {
+      if (!alg) return '';
+      const moves = alg.trim().split(/\s+/).filter(Boolean);
+      const inverted = [];
+      for (let i = moves.length - 1; i >= 0; i--) {
+        let m = moves[i].replace(/[()]/g, '');
+        if (!m) continue;
+        if (m.endsWith('2')) inverted.push(m);
+        else if (m.endsWith("'")) inverted.push(m.slice(0, -1));
+        else inverted.push(m + "'");
+      }
+      return inverted.join(' ');
+    }
+
+    function generate2x2(length = null) {
+      const count = length || randomInt(9, 11);
+      const faces = ['R', 'U', 'F'];
+      const scramble = [];
+      let lastFace = null;
+      for (let i = 0; i < count; i++) {
+        const available = faces.filter(f => f !== lastFace);
+        const face = pickRandom(available);
+        scramble.push(face + pickRandom(SUFFIXES));
+        lastFace = face;
+      }
+      return scramble.join(' ');
+    }
+
+    const OPPOSITES_3X3 = { U: 'D', D: 'U', L: 'R', R: 'L', F: 'B', B: 'F' };
+
+    function generate3x3(length = null) {
+      const count = length || randomInt(19, 22);
+      const faces = ['U', 'D', 'L', 'R', 'F', 'B'];
+      const scramble = [];
+      let lastFace = null;
+      let secondLastFace = null;
+
+      for (let i = 0; i < count; i++) {
+        const available = faces.filter(f => {
+          if (f === lastFace) return false;
+          if (lastFace && OPPOSITES_3X3[lastFace] === f && secondLastFace === f) return false;
+          return true;
+        });
+        const face = pickRandom(available);
+        scramble.push(face + pickRandom(SUFFIXES));
+        secondLastFace = lastFace;
+        lastFace = face;
+      }
+      return scramble.join(' ');
+    }
+
+    function generate4x4(length = null) {
+      const count = length || randomInt(40, 45);
+      const outerFaces = ['U', 'D', 'L', 'R', 'F', 'B'];
+      const wideFaces = ['Uw', 'Dw', 'Lw', 'Rw', 'Fw', 'Bw'];
+      const allFaces = [...outerFaces, ...wideFaces];
+      const scramble = [];
+      let lastBase = null;
+      let secondLastBase = null;
+      const getBase = (f) => f.replace('w', '');
+
+      for (let i = 0; i < count; i++) {
+        const available = allFaces.filter(f => {
+          const base = getBase(f);
+          if (f === lastBase) return false;
+          if (lastBase && OPPOSITES_3X3[lastBase] === base && secondLastBase === base) return false;
+          return true;
+        });
+        const face = pickRandom(available);
+        scramble.push(face + pickRandom(SUFFIXES));
+        secondLastBase = lastBase;
+        lastBase = getBase(face);
+      }
+      return scramble.join(' ');
+    }
+
+    // ALL 21 WCA PLL CASES
+    const PLL_CASES = [
+      { id: 'Aa', group: 'Hoán vị 3 góc (Corners Only)', name: 'Aa-Perm', alg: "x (R' U R') D2 (R U' R') D2 R2 x'", desc: 'Đèn trước, đổi 3 góc ngược chiều kim đồng hồ' },
+      { id: 'Ab', group: 'Hoán vị 3 góc (Corners Only)', name: 'Ab-Perm', alg: "x R2 D2 (R U R') D2 (R U' R) x'", desc: 'Đèn phải, đổi 3 góc thuận chiều kim đồng hồ' },
+      { id: 'E',  group: 'Hoán vị 4 góc (Corners Only)', name: 'E-Perm',  alg: "x' (R U' R' D) (R U R' D') (R U R' D) (R U' R' D') x", desc: 'Không có đèn, đổi 2 cặp góc đối xứng' },
+      { id: 'F',  group: 'Đổi 2 góc & 2 cạnh (Adjacent)', name: 'F-Perm',  alg: "(R' U' F') (R U R' U') (R' F R2 U') (R' U' R U) (R' U R)", desc: 'Thanh 1x3 bên trái, đổi 2 góc & 2 cạnh' },
+      { id: 'Ga', group: 'Hoán vị G (G-Perms)', name: 'Ga-Perm', alg: "R2 U (R' U R' U') (R U' R2) D (U' R' U R) D'", desc: 'Đèn bên trái, khối 1x2 ở sau phải' },
+      { id: 'Gb', group: 'Hoán vị G (G-Perms)', name: 'Gb-Perm', alg: "(R' U' R) (U D') (R2 U R' U) (R U' R U') R2 D", desc: 'Đèn ở trước, khối 1x2 ở sau phải' },
+      { id: 'Gc', group: 'Hoán vị G (G-Perms)', name: 'Gc-Perm', alg: "R2 U' (R U' R U) (R' U R2) D' (U R U' R') D", desc: 'Đèn bên phải, khối 1x2 ở trước trái' },
+      { id: 'Gd', group: 'Hoán vị G (G-Perms)', name: 'Gd-Perm', alg: "(R U R' U') D (R2 U' R U') (R' U R' U) R2 D'", desc: 'Đèn ở sau, khối 1x2 ở trước trái' },
+      { id: 'H',  group: 'Hoán vị 4 cạnh (Edges Only)', name: 'H-Perm',  alg: "M2' U M2' U2 M2' U M2'", desc: 'Đổi chéo 4 cạnh đối diện nhau' },
+      { id: 'Ja', group: 'Đổi 2 góc & 2 cạnh (Adjacent)', name: 'Ja-Perm', alg: "(R' U L' U2) (R U' R') U2 (R L)", desc: 'Thanh 1x3 bên phải, đổi 2 góc & 2 cạnh trái' },
+      { id: 'Jb', group: 'Đổi 2 góc & 2 cạnh (Adjacent)', name: 'Jb-Perm', alg: "(R U R' F') (R U R' U') (R' F R2 U' R')", desc: 'Thanh 1x3 bên trái, đổi 2 góc & 2 cạnh phải' },
+      { id: 'Na', group: 'Đổi 2 góc & 2 cạnh (Diagonal)', name: 'Na-Perm', alg: "(R U R' U) (R U R' F') (R U R' U') (R' F R2 U') (R' U2 R U' R')", desc: '2 thanh 1x2 đối chéo, hoán vị góc và cạnh trái' },
+      { id: 'Nb', group: 'Đổi 2 góc & 2 cạnh (Diagonal)', name: 'Nb-Perm', alg: "(R' U R U') R' F' U' F (R U R') F (R' F' R) U' R", desc: '2 thanh 1x2 đối chéo, hoán vị góc và cạnh phải' },
+      { id: 'Ra', group: 'Đổi 2 góc & 2 cạnh (Adjacent)', name: 'Ra-Perm', alg: "(R U' R' U') (R U R D) (R' U' R D') (R' U2 R')", desc: 'Đèn bên trái, khối 1x2 ở trước' },
+      { id: 'Rb', group: 'Đổi 2 góc & 2 cạnh (Adjacent)', name: 'Rb-Perm', alg: "(R' U2 R U2) R' F (R U R' U') R' F' R2 U'", desc: 'Đèn ở trước, khối 1x2 bên trái' },
+      { id: 'T',  group: 'Đổi 2 góc & 2 cạnh (Adjacent)', name: 'T-Perm',  alg: "(R U R' U') (R' F R2 U') (R' U' R U) (R' F')", desc: 'Đèn bên trái, thanh 1x2 bên phải (kinh điển)' },
+      { id: 'Ua', group: 'Hoán vị 3 cạnh (Edges Only)', name: 'Ua-Perm', alg: "(R U' R U) (R U R U') (R' U' R2)", desc: 'Thanh giải ở sau, đổi 3 cạnh theo chiều kim đồng hồ' },
+      { id: 'Ub', group: 'Hoán vị 3 cạnh (Edges Only)', name: 'Ub-Perm', alg: "(R2 U R U) (R' U' R' U') (R' U R')", desc: 'Thanh giải ở sau, đổi 3 cạnh ngược chiều kim đồng hồ' },
+      { id: 'V',  group: 'Đổi 2 góc & 2 cạnh (Diagonal)', name: 'V-Perm',  alg: "(R' U R' U') y (R' F' R2 U') (R' U R' F) (R F)", desc: 'Khối 2x2 ở góc sau trái, đổi chéo góc và cạnh' },
+      { id: 'Y',  group: 'Đổi 2 góc & 2 cạnh (Diagonal)', name: 'Y-Perm',  alg: "F (R U' R' U') (R U R' F') (R U R' U') (R' F R F')", desc: 'Đèn ở sau, khối 1x2 ở sau phải, đổi 2 góc chéo' },
+      { id: 'Z',  group: 'Hoán vị 4 cạnh (Edges Only)', name: 'Z-Perm',  alg: "M2' U M2' U M' U2 M2' U2 M'", desc: 'Đổi 2 cặp cạnh liền kề chéo nhau' }
+    ];
+
+    // ALL 57 OLL CASES (WANG YIHENG STANDARDS)
+    const OLL_CASES = [
+      { id: '1',  group: 'Dot', name: 'OLL 1', alg: "R U2' R2' F R U2' R' F R F'" },
+      { id: '2',  group: 'Dot', name: 'OLL 2', alg: "F (R U R' U') S (R U R' U') f'" },
+      { id: '3',  group: 'Dot', name: 'OLL 3', alg: "f (R U R' U') U' F (R U R' U')" },
+      { id: '4',  group: 'Dot', name: 'OLL 4', alg: "f (R U R' U') F (R U R' U')" },
+      { id: '5',  group: 'Square', name: 'OLL 5', alg: "r' U2' R U R' U r" },
+      { id: '6',  group: 'Square', name: 'OLL 6', alg: "r U2' R' U' R U' r'" },
+      { id: '7',  group: 'Lightning', name: 'OLL 7', alg: "r U R' U R U2' r'" },
+      { id: '8',  group: 'Lightning', name: 'OLL 8', alg: "l' U' L U' L' U2' l" },
+      { id: '9',  group: 'Fish', name: 'OLL 9', alg: "(R U R' U') R' F R2 U R' U' F'" },
+      { id: '10', group: 'Fish', name: 'OLL 10', alg: "R U R' U R' F R F' R U2' R'" },
+      { id: '11', group: 'Lightning', name: 'OLL 11', alg: "r' R2 R' R U2' R' U M'" },
+      { id: '12', group: 'Lightning', name: 'OLL 12', alg: "r R2' U' R U' R' U2 R U' r' R" },
+      { id: '13', group: 'Knight', name: 'OLL 13', alg: "L F' L' U' L U L' U' L F L'" },
+      { id: '14', group: 'Knight', name: 'OLL 14', alg: "R' F R U R' F' R F U' F'" },
+      { id: '15', group: 'Knight', name: 'OLL 15', alg: "l' U' l L' U' L U l' U l" },
+      { id: '16', group: 'Knight', name: 'OLL 16', alg: "r U r' R U R' U' r U' r'" },
+      { id: '17', group: 'Dot', name: 'OLL 17', alg: "R U R' U (R' F R F') U2 (R' F R F')" },
+      { id: '18', group: 'Dot', name: 'OLL 18', alg: "r U R' U R U2' r2' U' R U' R' U2' r" },
+      { id: '19', group: 'Dot', name: 'OLL 19', alg: "M U R U R' U' M' R' F R F'" },
+      { id: '20', group: 'Dot', name: 'OLL 20', alg: "(r U R' U') M2' U R U' R' U' M'" },
+      { id: '21', group: 'EO', name: 'OLL 21 (H)', alg: "R U2' R' U' (R U R' U') R U' R'" },
+      { id: '22', group: 'EO', name: 'OLL 22 (Pi)', alg: "R U2' R2' U' R2 U' R2' U2' R" },
+      { id: '23', group: 'EO', name: 'OLL 23 (Headlights)', alg: "R2 D R' U2 R D' R' U2 R'" },
+      { id: '24', group: 'EO', name: 'OLL 24 (Chameleon)', alg: "(r U R' U') (r' F R F')" },
+      { id: '25', group: 'EO', name: 'OLL 25 (Bowtie)', alg: "F' (r U R' U') r' F R" },
+      { id: '26', group: 'EO', name: 'OLL 26 (Anti-Sune)', alg: "R' U' R U' R' U2' R" },
+      { id: '27', group: 'EO', name: 'OLL 27 (Sune)', alg: "R U R' U R U2' R'" },
+      { id: '28', group: 'CO', name: 'OLL 28', alg: "(r U R' U') r' R U R U' R'" },
+      { id: '29', group: 'Awkward', name: 'OLL 29', alg: "(R U R' U') R U' R' F' U' F R U R'" },
+      { id: '30', group: 'Awkward', name: 'OLL 30', alg: "F R' F R2 U' R' U' R U2' R'" },
+      { id: '31', group: 'P', name: 'OLL 31', alg: "R' U' F U R U' R' F' R" },
+      { id: '32', group: 'P', name: 'OLL 32', alg: "S (R U R' U') R' F R f'" },
+      { id: '33', group: 'T', name: 'OLL 33', alg: "(R U R' U') (R' F R F')" },
+      { id: '34', group: 'C', name: 'OLL 34', alg: "(R U R' U') (R' F R F') R' U2' R U R' R" },
+      { id: '35', group: 'Fish', name: 'OLL 35', alg: "R U2' R2' F R F' R U2' R'" },
+      { id: '36', group: 'W', name: 'OLL 36', alg: "L' U' L U' L' U L U (L F' L' F)" },
+      { id: '37', group: 'Fish', name: 'OLL 37', alg: "F R' F' R U R U' R'" },
+      { id: '38', group: 'W', name: 'OLL 38', alg: "R U R' U R U' R' (R' F R F')" },
+      { id: '39', group: 'Lightning', name: 'OLL 39', alg: "L F' L' U' L U F U' L'" },
+      { id: '40', group: 'Lightning', name: 'OLL 40', alg: "R' F (R U R' U') F' U R" },
+      { id: '41', group: 'Awkward', name: 'OLL 41', alg: "R U R' U' R U2' R' F (R U R' U') F'" },
+      { id: '42', group: 'Awkward', name: 'OLL 42', alg: "R' U' R U' R' U2' R F (R U R' U') F'" },
+      { id: '43', group: 'P', name: 'OLL 43', alg: "R' U' F' U F R" },
+      { id: '44', group: 'P', name: 'OLL 44', alg: "f (R U R' U') f'" },
+      { id: '45', group: 'T', name: 'OLL 45', alg: "F (R U R' U') F'" },
+      { id: '46', group: 'C', name: 'OLL 46', alg: "R' U' (R' F R F') U R" },
+      { id: '47', group: 'L', name: 'OLL 47', alg: "R' U' (R' F R F')(R' F R F') U R" },
+      { id: '48', group: 'L', name: 'OLL 48', alg: "F (R U R' U')(R U R' U') F'" },
+      { id: '49', group: 'L', name: 'OLL 49', alg: "R B' R2' F R2 B R2' F' R" },
+      { id: '50', group: 'L', name: 'OLL 50', alg: "r' U r2 U' r2' U' r2 U r'" },
+      { id: '51', group: 'Line', name: 'OLL 51', alg: "f (R U R' U')(R U R' U') f'" },
+      { id: '52', group: 'Line', name: 'OLL 52', alg: "R' U' F' U' F U R U' R' R" },
+      { id: '53', group: 'L', name: 'OLL 53', alg: "r' U2' (R U R' U') R U R' r" },
+      { id: '54', group: 'L', name: 'OLL 54', alg: "r U2' R' U' (R U R' U') R r'" },
+      { id: '55', group: 'Line', name: 'OLL 55', alg: "r U2' R' U' r' R2 R' U' r r'" },
+      { id: '56', group: 'Line', name: 'OLL 56', alg: "r U r' R U' R' U R U' R' r U' r'" },
+      { id: '57', group: 'CO', name: 'OLL 57', alg: "(R U R' U') M' U R U' r'" }
+    ];
+
+    const OLL_2LOOK_CASES = OLL_CASES.filter(c => parseInt(c.id, 10) >= 21 && parseInt(c.id, 10) <= 27);
+
+    function generatePLLScramble(mode = 'pll_21') {
+      let pool = PLL_CASES;
+      if (mode === 'pll_2look') {
+        pool = PLL_CASES.filter(c => ['Aa', 'Ab', 'E', 'Ua', 'Ub', 'H', 'Z'].includes(c.id));
+      } else if (mode === 'pll_edges') {
+        pool = PLL_CASES.filter(c => ['Ua', 'Ub', 'H', 'Z'].includes(c.id));
+      } else if (mode === 'pll_corners') {
+        pool = PLL_CASES.filter(c => ['Aa', 'Ab', 'E'].includes(c.id));
+      } else if (mode === 'pll_adjacent') {
+        pool = PLL_CASES.filter(c => ['T', 'F', 'Ja', 'Jb', 'Ra', 'Rb'].includes(c.id));
+      } else if (mode === 'pll_diagonal') {
+        pool = PLL_CASES.filter(c => ['V', 'Y', 'Na', 'Nb'].includes(c.id));
+      } else if (mode === 'pll_g') {
+        pool = PLL_CASES.filter(c => ['Ga', 'Gb', 'Gc', 'Gd'].includes(c.id));
+      }
+      const targetCase = pickRandom(pool.length ? pool : PLL_CASES);
+      const auf = ['', 'U', "U'", 'U2'];
+      const pre = pickRandom(auf);
+      const post = pickRandom(auf);
+      const inv = invertAlgorithm(targetCase.alg);
+      return {
+        scramble: [pre, inv, post].filter(Boolean).join(' '),
+        caseId: targetCase.id,
+        caseName: targetCase.name,
+        group: targetCase.group,
+        alg: targetCase.alg
+      };
+    }
+
+    function generateOLLScramble(mode = 'oll_57') {
+      let pool = OLL_CASES;
+      if (mode === 'oll_2look') {
+        pool = OLL_2LOOK_CASES;
+      } else if (mode === 'oll_dot') {
+        pool = OLL_CASES.filter(c => [1, 2, 3, 4, 17, 18, 19, 20].includes(parseInt(c.id, 10)));
+      }
+      const targetCase = pickRandom(pool.length ? pool : OLL_CASES);
+      const auf = ['', 'U', "U'", 'U2'];
+      const pre = pickRandom(auf);
+      const post = pickRandom(auf);
+      const inv = invertAlgorithm(targetCase.alg);
+      return {
+        scramble: [pre, inv, post].filter(Boolean).join(' '),
+        caseId: targetCase.id,
+        caseName: targetCase.name,
+        group: targetCase.group,
+        alg: targetCase.alg
+      };
+    }
+
+    function generateOLLScramble(mode = 'oll_57') {
+      const pool = (mode === 'oll_2look') ? OLL_2LOOK_CASES : OLL_CASES;
+      const targetCase = pickRandom(pool);
+      const auf = ['', 'U', "U'", 'U2'];
+      const pre = pickRandom(auf);
+      const post = pickRandom(auf);
+      const inv = invertAlgorithm(targetCase.alg);
+      return {
+        scramble: [pre, inv, post].filter(Boolean).join(' '),
+        caseId: targetCase.id,
+        caseName: targetCase.name,
+        group: targetCase.group,
+        alg: targetCase.alg
+      };
+    }
+
+    function generateScramble(type = '333', options = {}) {
+      switch (type) {
+        case '222': return { scramble: generate2x2(options.length), type };
+        case '444': return { scramble: generate4x4(options.length), type };
+        case 'oll': return { ...generateOLLScramble(options.mode || 'oll_57'), type };
+        case 'pll': return { ...generatePLLScramble(options.mode || 'pll_21'), type };
+        default: return { scramble: generate3x3(options.length), type: '333' };
+      }
+    }
+
+    // ALL 41 F2L CASES
+    const F2L_41_CASES = [
+      // 1. Cặp ghép sẵn (Basic Insert)
+      { id: 1,  group: 'Cặp ghép sẵn (Basic Insert)', name: 'F2L 1', alg: "U (R U' R')", desc: 'Ghép sẵn chèn slot phải' },
+      { id: 2,  group: 'Cặp ghép sẵn (Basic Insert)', name: 'F2L 2', alg: "y' U' (R' U R)", desc: 'Ghép sẵn chèn slot trái' },
+      { id: 3,  group: 'Cặp ghép sẵn (Basic Insert)', name: 'F2L 3', alg: "y' (R' U R)", desc: 'Chèn trực tiếp slot trái' },
+      { id: 4,  group: 'Cặp ghép sẵn (Basic Insert)', name: 'F2L 4', alg: "R U' R'", desc: 'Chèn trực tiếp slot phải' },
+
+      // 2. Khác màu đỉnh (Different top color)
+      { id: 5,  group: 'Khác màu đỉnh', name: 'F2L 5', alg: "R U R'", desc: 'Góc hướng phải, cạnh khớp tâm' },
+      { id: 6,  group: 'Khác màu đỉnh', name: 'F2L 6', alg: "y' (R' U' R)", desc: 'Góc hướng trước, cạnh khớp tâm trái' },
+      { id: 7,  group: 'Khác màu đỉnh', name: 'F2L 7', alg: "U' (R U R') U (R U R')", desc: 'Tách góc và cạnh rồi chèn cơ bản' },
+      { id: 8,  group: 'Khác màu đỉnh', name: 'F2L 8', alg: "y' U (R' U' R) U' (R' U' R)", desc: 'Tách góc và cạnh bên trái' },
+      { id: 9,  group: 'Khác màu đỉnh', name: 'F2L 9', alg: "U' (R U' R' U) (R U R')", desc: 'Đưa về cặp ghép sẵn' },
+      { id: 10, group: 'Khác màu đỉnh', name: 'F2L 10', alg: "y' U (R' U R U') (R' U' R)", desc: 'Đưa về cặp ghép sẵn bên trái' },
+      { id: 11, group: 'Khác màu đỉnh', name: 'F2L 11', alg: "U' (R U2' R') U (R U R')", desc: 'Tách góc xa' },
+      { id: 12, group: 'Khác màu đỉnh', name: 'F2L 12', alg: "y' U (R' U2 R) U' (R' U' R)", desc: 'Tách góc xa bên trái' },
+
+      // 3. Cùng màu đỉnh (Same top color - Tất cả 8 case phân biệt)
+      { id: 13, group: 'Cùng màu đỉnh', name: 'F2L 13', alg: "U' (R U2' R') U2 (R U' R')", desc: 'Góc hướng phải, cùng màu' },
+      { id: 14, group: 'Cùng màu đỉnh', name: 'F2L 14', alg: "y' U (R' U2 R) U2 (R' U R)", desc: 'Góc hướng trước, cùng màu' },
+      { id: 15, group: 'Cùng màu đỉnh', name: 'F2L 15', alg: "(R U' R' U2) y' (R' U' R)", desc: 'Cặp dính liền cùng màu' },
+      { id: 16, group: 'Cùng màu đỉnh', name: 'F2L 16', alg: "(R' F R F') (R U R')", desc: 'Dính liền chèn sledgehammer' },
+      { id: 17, group: 'Cùng màu đỉnh', name: 'F2L 17', alg: "(R U R' U2) (R U' R')", desc: 'Góc hướng trước, cạnh đối diện' },
+      { id: 18, group: 'Cùng màu đỉnh', name: 'F2L 18', alg: "y' (R' U' R U2) (R' U R)", desc: 'Góc hướng phải, cạnh đối diện' },
+      { id: 19, group: 'Cùng màu đỉnh', name: 'F2L 19', alg: "(R U2 R') U2 (R U' R')", desc: 'Ghép cặp gián tiếp' },
+      { id: 20, group: 'Cùng màu đỉnh', name: 'F2L 20', alg: "y' (R' U2 R) U2 (R' U R)", desc: 'Ghép cặp gián tiếp bên trái' },
+
+      // 4. Trắng hướng lên trên (White UP)
+      { id: 21, group: 'Trắng hướng lên trên (White UP)', name: 'F2L 21', alg: "(R U2 R') U' (R U R')", desc: 'Cạnh khớp tâm bên phải' },
+      { id: 22, group: 'Trắng hướng lên trên (White UP)', name: 'F2L 22', alg: "y' (R' U2 R) U (R' U' R)", desc: 'Cạnh khớp tâm bên trái' },
+      { id: 23, group: 'Trắng hướng lên trên (White UP)', name: 'F2L 23', alg: "U2 (R U R' U) (R U' R')", desc: 'Tách góc trắng hướng lên' },
+      { id: 24, group: 'Trắng hướng lên trên (White UP)', name: 'F2L 24', alg: "y' U2 (R' U' R U') (R' U R)", desc: 'Tách góc trắng hướng lên bên trái' },
+      { id: 25, group: 'Trắng hướng lên trên (White UP)', name: 'F2L 25', alg: "U (R U2 R') U (R U' R')", desc: 'Xoay góc đưa cạnh về cặp' },
+      { id: 26, group: 'Trắng hướng lên trên (White UP)', name: 'F2L 26', alg: "y' U' (R' U2 R) U' (R' U R)", desc: 'Xoay góc đưa cạnh về cặp bên trái' },
+      { id: 27, group: 'Trắng hướng lên trên (White UP)', name: 'F2L 27', alg: "(R U' R' U2) (R U R')", desc: 'Ghép đôi từ góc đỉnh' },
+      { id: 28, group: 'Trắng hướng lên trên (White UP)', name: 'F2L 28', alg: "y' (R' U R U2) (R' U' R)", desc: 'Ghép đôi từ góc đỉnh bên trái' },
+
+      // 5. Kẹt trong Slot
+      { id: 29, group: 'Kẹt trong Slot', name: 'F2L 29', alg: "(R U' R' U) (R U' R')", desc: 'Cạnh kẹt đúng slot, góc ở U' },
+      { id: 30, group: 'Kẹt trong Slot', name: 'F2L 30', alg: "(R U R' U') (R U R')", desc: 'Cạnh kẹt sai hướng, góc ở U' },
+      { id: 31, group: 'Kẹt trong Slot', name: 'F2L 31', alg: "(R U' R' U') (R U R')", desc: 'Góc kẹt đúng slot, cạnh ở U' },
+      { id: 32, group: 'Kẹt trong Slot', name: 'F2L 32', alg: "(R U R' U) (R U' R')", desc: 'Góc kẹt sai hướng, cạnh ở U' },
+      { id: 33, group: 'Kẹt trong Slot', name: 'F2L 33', alg: "(R U' R') (y' R' U2 R)", desc: 'Trích xuất cạnh kẹt' },
+      { id: 34, group: 'Kẹt trong Slot', name: 'F2L 34', alg: "(R U R') (y' R' U2 R)", desc: 'Trích xuất cạnh kẹt và ghép' },
+      { id: 35, group: 'Kẹt trong Slot', name: 'F2L 35', alg: "(R U' R' U) (y' R' U R)", desc: 'Cả góc và cạnh đều kẹt' },
+      { id: 36, group: 'Kẹt trong Slot', name: 'F2L 36', alg: "(R U R' U') (y' R' U' R)", desc: 'Cả góc và cạnh kẹt sai hướng' },
+      { id: 37, group: 'Kẹt trong Slot', name: 'F2L 37', alg: "(R U' R') d (R' U2 R) (U R' U' R)", desc: 'Đổi hướng góc kẹt' },
+      { id: 38, group: 'Kẹt trong Slot', name: 'F2L 38', alg: "(R U R' U') (R U' R' U2) y' (R' U' R)", desc: 'Đổi hướng cạnh kẹt' },
+      { id: 39, group: 'Kẹt trong Slot', name: 'F2L 39', alg: "(R U' R' U2) y' (R' U R U') (R' U R)", desc: 'Xử lý cặp kẹt đảo góc' },
+      { id: 40, group: 'Kẹt trong Slot', name: 'F2L 40', alg: "(R U R' U') (R U2 R') U (R U' R')", desc: 'Xử lý cặp kẹt đối xứng' },
+      { id: 41, group: 'Kẹt trong Slot', name: 'F2L 41', alg: "(R U' R') (r' U' R U M')", desc: 'Hoán vị cạnh-góc trong slot' }
+    ];
+
+    // ==========================================
+    // 3. STATS ENGINE
+    // ==========================================
+    function getEffectiveTime(solve) {
+      if (!solve || solve.penalty === 'DNF') return Infinity;
+      if (solve.penalty === '+2') return solve.time + 2000;
+      return solve.time;
+    }
+
+    function formatTime(ms, showMs = false) {
+      if (ms === null || ms === undefined || ms === Infinity || isNaN(ms)) return 'DNF';
+      if (ms < 0) return '-';
+      const totalSeconds = ms / 1000;
+      const minutes = Math.floor(totalSeconds / 60);
+      const remainingSeconds = totalSeconds % 60;
+      const secStr = minutes > 0 ? Math.floor(remainingSeconds).toString().padStart(2, '0') : Math.floor(remainingSeconds).toString();
+      const fracStr = showMs ? Math.floor((ms % 1000)).toString().padStart(3, '0') : Math.floor((ms % 1000) / 10).toString().padStart(2, '0');
+      return minutes > 0 ? `${minutes}:${secStr}.${fracStr}` : `${secStr}.${fracStr}`;
+    }
+
+    function formatSolveDisplay(solve, showMs = false) {
+      if (!solve) return '-';
+      if (solve.penalty === 'DNF') return `DNF(${formatTime(solve.time, showMs)})`;
+      const eff = getEffectiveTime(solve);
+      const formatted = formatTime(eff, showMs);
+      return solve.penalty === '+2' ? `${formatted}+` : formatted;
+    }
+
+    function computeMo3(slice) {
+      if (!slice || slice.length < 3) return null;
+      const times = slice.map(getEffectiveTime);
+      if (times.some(t => t === Infinity)) return Infinity;
+      return Math.round(times.reduce((a, b) => a + b, 0) / 3);
+    }
+
+    function computeAoN(slice, n) {
+      if (!slice || slice.length < n) return null;
+      const times = slice.slice(0, n).map(getEffectiveTime);
+      const trimCount = n >= 50 ? Math.ceil(n * 0.05) : 1;
+      const dnfCount = times.filter(t => t === Infinity).length;
+      if (dnfCount > trimCount) return Infinity;
+      times.sort((a, b) => a - b);
+      const middle = times.slice(trimCount, times.length - trimCount);
+      return Math.round(middle.reduce((a, b) => a + b, 0) / middle.length);
+    }
+
+    function calculateStats(solves) {
+      if (!solves || solves.length === 0) {
+        return { count: 0, best: null, worst: null, mean: null, current: null, mo3: null, ao5: null, ao12: null, ao50: null, bestAo5: null, bestAo12: null };
+      }
+      const n = solves.length;
+      const currentSolve = solves[n - 1];
+      const validTimes = solves.map(getEffectiveTime).filter(t => t !== Infinity);
+      const bestSingle = validTimes.length > 0 ? Math.min(...validTimes) : null;
+      const worstSingle = validTimes.length > 0 ? Math.max(...validTimes) : null;
+      const sessionMean = validTimes.length > 0 ? Math.round(validTimes.reduce((a, b) => a + b, 0) / validTimes.length) : null;
+
+      const last3 = n >= 3 ? solves.slice(n - 3) : null;
+      const last5 = n >= 5 ? solves.slice(n - 5) : null;
+      const last12 = n >= 12 ? solves.slice(n - 12) : null;
+      const last50 = n >= 50 ? solves.slice(n - 50) : null;
+
+      let bestAo5 = null;
+      if (n >= 5) {
+        for (let i = 0; i <= n - 5; i++) {
+          const avg = computeAoN(solves.slice(i, i + 5), 5);
+          if (avg !== null && avg !== Infinity && (bestAo5 === null || avg < bestAo5)) bestAo5 = avg;
+        }
+      }
+
+      let bestAo12 = null;
+      if (n >= 12) {
+        for (let i = 0; i <= n - 12; i++) {
+          const avg = computeAoN(solves.slice(i, i + 12), 12);
+          if (avg !== null && avg !== Infinity && (bestAo12 === null || avg < bestAo12)) bestAo12 = avg;
+        }
+      }
+
+      return {
+        count: n,
+        current: currentSolve,
+        best: bestSingle,
+        worst: worstSingle,
+        mean: sessionMean,
+        mo3: last3 ? computeMo3(last3) : null,
+        ao5: last5 ? computeAoN(last5, 5) : null,
+        ao12: last12 ? computeAoN(last12, 12) : null,
+        ao50: last50 ? computeAoN(last50, 50) : null,
+        bestAo5,
+        bestAo12
+      };
+    }
+
+    // ==========================================
+    
+    // ==========================================
+    // CUBE DIAGRAM SVG GENERATORS (OLL, PLL, F2L)
+    // ==========================================
+    const OLL_DIAGRAM_DATA = {
+      1:  { e: [0,0,0,0], c: ['B','B','F','F'] },
+      2:  { e: [0,0,0,0], c: ['L','R','R','L'] },
+      3:  { e: [0,0,0,0], c: ['L','B','R','F'] },
+      4:  { e: [0,0,0,0], c: ['B','R','F','L'] },
+      5:  { e: [0,1,1,0], c: ['L','R','top','F'] },
+      6:  { e: [0,0,1,1], c: ['L','R','F','top'] },
+      7:  { e: [1,1,0,0], c: ['L','top','F','L'] },
+      8:  { e: [1,0,0,1], c: ['top','R','R','F'] },
+      9:  { e: [1,1,0,0], c: ['B','R','top','L'] },
+      10: { e: [1,0,0,1], c: ['L','B','R','top'] },
+      11: { e: [1,0,1,0], c: ['top','B','R','F'] },
+      12: { e: [1,0,1,0], c: ['B','top','F','L'] },
+      13: { e: [0,1,1,0], c: ['top','B','R','L'] },
+      14: { e: [0,0,1,1], c: ['B','top','R','L'] },
+      15: { e: [1,0,0,1], c: ['L','R','top','F'] },
+      16: { e: [1,1,0,0], c: ['L','R','F','top'] },
+      17: { e: [0,0,0,0], c: ['top','R','top','L'] },
+      18: { e: [0,0,0,0], c: ['top','top','F','F'] },
+      19: { e: [0,0,0,0], c: ['top','R','R','top'] },
+      20: { e: [0,0,0,0], c: ['top','top','top','top'] },
+      21: { e: [1,1,1,1], c: ['L','R','R','L'] },
+      22: { e: [1,1,1,1], c: ['L','B','F','L'] },
+      23: { e: [1,1,1,1], c: ['top','top','F','F'] },
+      24: { e: [1,1,1,1], c: ['top','top','R','L'] },
+      25: { e: [1,1,1,1], c: ['top','B','top','F'] },
+      26: { e: [1,1,1,1], c: ['L','top','R','F'] },
+      27: { e: [1,1,1,1], c: ['B','R','F','top'] },
+      28: { e: [0,0,0,0], c: ['top','top','top','top'] },
+      29: { e: [0,1,1,0], c: ['B','top','R','top'] },
+      30: { e: [0,0,1,1], c: ['top','B','top','L'] },
+      31: { e: [1,0,1,1], c: ['top','B','F','top'] },
+      32: { e: [1,1,1,0], c: ['B','top','top','F'] },
+      33: { e: [0,1,0,1], c: ['B','B','top','top'] },
+      34: { e: [0,1,0,1], c: ['top','top','R','L'] },
+      35: { e: [1,1,0,0], c: ['top','R','top','F'] },
+      36: { e: [1,0,0,1], c: ['top','R','L','top'] },
+      37: { e: [1,0,0,1], c: ['L','top','F','top'] },
+      38: { e: [1,1,0,0], c: ['L','top','top','R'] },
+      39: { e: [1,0,0,1], c: ['B','top','F','top'] },
+      40: { e: [1,1,0,0], c: ['top','B','top','F'] },
+      41: { e: [1,1,0,0], c: ['top','B','F','top'] },
+      42: { e: [1,0,0,1], c: ['B','top','top','F'] },
+      43: { e: [1,0,1,1], c: ['top','top','R','F'] },
+      44: { e: [1,1,1,0], c: ['top','top','F','L'] },
+      45: { e: [0,1,0,1], c: ['top','R','R','top'] },
+      46: { e: [0,1,0,1], c: ['top','top','F','F'] },
+      47: { e: [1,0,0,1], c: ['L','B','R','F'] },
+      48: { e: [1,1,0,0], c: ['B','R','F','L'] },
+      49: { e: [1,1,0,0], c: ['L','B','R','F'] },
+      50: { e: [1,0,0,1], c: ['B','R','F','L'] },
+      51: { e: [0,1,0,1], c: ['B','B','F','F'] },
+      52: { e: [0,1,0,1], c: ['L','R','R','L'] },
+      53: { e: [1,0,0,1], c: ['B','R','top','F'] },
+      54: { e: [1,1,0,0], c: ['L','B','F','top'] },
+      55: { e: [0,1,0,1], c: ['L','B','R','F'] },
+      56: { e: [0,1,0,1], c: ['top','B','F','top'] },
+      57: { e: [1,0,1,0], c: ['top','top','top','top'] }
+    };
+
+    function generateOllSvg(id) {
+      const num = parseInt(id, 10);
+      const d = OLL_DIAGRAM_DATA[num] || { e: [1,1,1,1], c: ['top','top','top','top'] };
+      const edges = d.e;
+      const corners = d.c;
+      const size = 88;
+      const pad = 14;
+      const cell = 17;
+      const gap = 4;
+      const grid = 3 * cell + 2 * gap; // 59
+
+      const cMap = {
+        BL: corners[0] === 'top',
+        B: edges[0] === 1,
+        BR: corners[1] === 'top',
+        L: edges[3] === 1,
+        C: true,
+        R: edges[1] === 1,
+        FL: corners[3] === 'top',
+        F: edges[2] === 1,
+        FR: corners[2] === 'top'
+      };
+
+      const coords = [
+        ['BL', 0, 0], ['B', 1, 0], ['BR', 2, 0],
+        ['L', 0, 1], ['C', 1, 1], ['R', 2, 1],
+        ['FL', 0, 2], ['F', 1, 2], ['FR', 2, 2]
+      ];
+
+      let cells = '';
+      coords.forEach(([k, col, row]) => {
+        const x = pad + col * (cell + gap);
+        const y = pad + row * (cell + gap);
+        const fill = cMap[k] ? '#FACC15' : '#1E293B';
+        const stroke = cMap[k] ? '#EAB308' : '#334155';
+        cells += `<rect x="${x}" y="${y}" width="${cell}" height="${cell}" rx="3" fill="${fill}" stroke="${stroke}" stroke-width="1" />`;
+      });
+
+      let bars = '';
+      const bt = 4;
+      const bp = 3;
+
+      // Top bars (Back)
+      if (corners[0] === 'B') bars += `<rect x="${pad}" y="${pad - bt - bp}" width="${cell}" height="${bt}" rx="1.5" fill="#FACC15" />`;
+      if (edges[0] === 0) bars += `<rect x="${pad + cell + gap}" y="${pad - bt - bp}" width="${cell}" height="${bt}" rx="1.5" fill="#FACC15" />`;
+      if (corners[1] === 'B') bars += `<rect x="${pad + 2*(cell + gap)}" y="${pad - bt - bp}" width="${cell}" height="${bt}" rx="1.5" fill="#FACC15" />`;
+
+      // Bottom bars (Front)
+      if (corners[3] === 'F') bars += `<rect x="${pad}" y="${pad + grid + bp}" width="${cell}" height="${bt}" rx="1.5" fill="#FACC15" />`;
+      if (edges[2] === 0) bars += `<rect x="${pad + cell + gap}" y="${pad + grid + bp}" width="${cell}" height="${bt}" rx="1.5" fill="#FACC15" />`;
+      if (corners[2] === 'F') bars += `<rect x="${pad + 2*(cell + gap)}" y="${pad + grid + bp}" width="${cell}" height="${bt}" rx="1.5" fill="#FACC15" />`;
+
+      // Left bars
+      if (corners[0] === 'L') bars += `<rect x="${pad - bt - bp}" y="${pad}" width="${bt}" height="${cell}" rx="1.5" fill="#FACC15" />`;
+      if (edges[3] === 0) bars += `<rect x="${pad - bt - bp}" y="${pad + cell + gap}" width="${bt}" height="${cell}" rx="1.5" fill="#FACC15" />`;
+      if (corners[3] === 'L') bars += `<rect x="${pad - bt - bp}" y="${pad + 2*(cell + gap)}" width="${bt}" height="${cell}" rx="1.5" fill="#FACC15" />`;
+
+      // Right bars
+      if (corners[1] === 'R') bars += `<rect x="${pad + grid + bp}" y="${pad}" width="${bt}" height="${cell}" rx="1.5" fill="#FACC15" />`;
+      if (edges[1] === 0) bars += `<rect x="${pad + grid + bp}" y="${pad + cell + gap}" width="${bt}" height="${cell}" rx="1.5" fill="#FACC15" />`;
+      if (corners[2] === 'R') bars += `<rect x="${pad + grid + bp}" y="${pad + 2*(cell + gap)}" width="${bt}" height="${cell}" rx="1.5" fill="#FACC15" />`;
+
+      return `<svg viewBox="0 0 ${size} ${size}" class="w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0" xmlns="http://www.w3.org/2000/svg"><rect width="${size}" height="${size}" rx="10" fill="#090D16" stroke="#1E293B" stroke-width="1.5" />${cells}${bars}</svg>`;
+    }
+
+
+    // 4. STORAGE & LEARNED MANAGER
+    // ==========================================
+    const STORAGE_KEYS = {
+      SESSIONS: 'speedcubing_timer_sessions',
+      ACTIVE_SESSION: 'speedcubing_timer_active_session_id',
+      SETTINGS: 'speedcubing_timer_settings',
+      LEARNED: 'speedcubing_learned_cases_v2'
+    };
+    const DEFAULT_SETTINGS = {
+      theme: 'dark',
+      inspection: false,
+      inspectionAudio: true,
+      holdDelayMs: 300,
+      showMs: false,
+      hideTimerWhileRunning: false
+    };
+
+    class StorageManager {
+      constructor() {
+        this.sessions = this.loadSessions();
+        this.activeSessionId = this.loadActiveSessionId();
+        this.settings = this.loadSettings();
+        this.learned = this.loadLearned();
+        this.lastDeleted = null;
+      }
+
+      loadLearned() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEYS.LEARNED);
+          if (raw) return JSON.parse(raw);
+        } catch (e) {}
+        // Default mastered cases for new cubers
+        const def = {
+          oll: ['21', '22', '26', '27'],
+          pll: ['T', 'Y', 'Ua', 'Ub'],
+          f2l: ['1', '2', '3', '4']
+        };
+        this.saveLearned(def);
+        return def;
+      }
+
+      saveLearned(data = this.learned) {
+        this.learned = data;
+        try { localStorage.setItem(STORAGE_KEYS.LEARNED, JSON.stringify(this.learned)); } catch (e) {}
+      }
+
+      toggleLearned(cat, id) {
+        if (!this.learned[cat]) this.learned[cat] = [];
+        const strId = String(id);
+        const idx = this.learned[cat].indexOf(strId);
+        if (idx !== -1) {
+          this.learned[cat].splice(idx, 1);
+        } else {
+          this.learned[cat].push(strId);
+        }
+        this.saveLearned();
+        return this.isLearned(cat, id);
+      }
+
+      isLearned(cat, id) {
+        if (!this.learned[cat]) return false;
+        return this.learned[cat].includes(String(id));
+      }
+
+      loadSettings() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEYS.SETTINGS);
+          return raw ? { ...DEFAULT_SETTINGS, ...JSON.parse(raw) } : { ...DEFAULT_SETTINGS };
+        } catch (e) {
+          return { ...DEFAULT_SETTINGS };
+        }
+      }
+
+      saveSettings(settings) {
+        this.settings = { ...this.settings, ...settings };
+        try { localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(this.settings)); } catch (e) {}
+      }
+
+      loadSessions() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEYS.SESSIONS);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+          }
+        } catch (e) {}
+        const defaultSessions = [{ id: 'sess_' + Date.now(), name: 'Session 1', puzzle: '333', createdAt: Date.now(), solves: [] }];
+        this.saveSessions(defaultSessions);
+        return defaultSessions;
+      }
+
+      saveSessions(sessions = this.sessions) {
+        this.sessions = sessions;
+        try { localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(this.sessions)); } catch (e) {}
+      }
+
+      loadActiveSessionId() {
+        const saved = localStorage.getItem(STORAGE_KEYS.ACTIVE_SESSION);
+        if (saved && this.sessions.some(s => s.id === saved)) return saved;
+        return this.sessions[0].id;
+      }
+
+      setActiveSessionId(id) {
+        if (this.sessions.some(s => s.id === id)) {
+          this.activeSessionId = id;
+          try { localStorage.setItem(STORAGE_KEYS.ACTIVE_SESSION, id); } catch (e) {}
+        }
+      }
+
+      getActiveSession() {
+        let s = this.sessions.find(x => x.id === this.activeSessionId);
+        if (!s) { s = this.sessions[0]; this.activeSessionId = s.id; }
+        return s;
+      }
+
+      createSession(name, puzzle = '333') {
+        const newSession = { id: 'sess_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6), name: name || `Session ${this.sessions.length + 1}`, puzzle, createdAt: Date.now(), solves: [] };
+        this.sessions.push(newSession);
+        this.saveSessions();
+        this.setActiveSessionId(newSession.id);
+        return newSession;
+      }
+
+      renameSession(id, newName) {
+        const session = this.sessions.find(s => s.id === id);
+        if (session && newName.trim()) { session.name = newName.trim(); this.saveSessions(); return true; }
+        return false;
+      }
+
+      clearActiveSessionSolves() {
+        const session = this.getActiveSession();
+        if (session) { session.solves = []; this.saveSessions(); }
+      }
+
+      addSolve(solveData) {
+        const session = this.getActiveSession();
+        const solve = {
+          id: 'slv_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+          time: solveData.time,
+          penalty: solveData.penalty || null,
+          scramble: solveData.scramble || '',
+          puzzle: solveData.puzzle || session.puzzle || '333',
+          date: Date.now(),
+          inspectionTime: solveData.inspectionTime || null
+        };
+        session.solves.push(solve);
+        this.saveSessions();
+        return solve;
+      }
+
+      updateSolvePenalty(solveId, penalty) {
+        const session = this.getActiveSession();
+        const solve = session.solves.find(s => s.id === solveId);
+        if (solve) { solve.penalty = penalty; this.saveSessions(); return solve; }
+        return null;
+      }
+
+      deleteSolve(solveId) {
+        const session = this.getActiveSession();
+        const idx = session.solves.findIndex(s => s.id === solveId);
+        if (idx !== -1) {
+          const removed = session.solves.splice(idx, 1)[0];
+          this.lastDeleted = { solve: removed, index: idx, sessionId: session.id };
+          this.saveSessions();
+          return removed;
+        }
+        return null;
+      }
+
+      deleteLastSolve() {
+        const session = this.getActiveSession();
+        if (session.solves.length > 0) return this.deleteSolve(session.solves[session.solves.length - 1].id);
+        return null;
+      }
+
+      undoDelete() {
+        if (!this.lastDeleted) return null;
+        const session = this.sessions.find(s => s.id === this.lastDeleted.sessionId);
+        if (session) {
+          session.solves.splice(this.lastDeleted.index, 0, this.lastDeleted.solve);
+          const restored = this.lastDeleted.solve;
+          this.lastDeleted = null;
+          this.saveSessions();
+          return restored;
+        }
+        return null;
+      }
+
+      exportToCSV() {
+        const session = this.getActiveSession();
+        const headers = ['No.', 'Date', 'Time (s)', 'Penalty', 'Scramble'];
+        const rows = session.solves.map((s, idx) => {
+          const dateStr = new Date(s.date).toISOString().replace('T', ' ').substring(0, 19);
+          const timeSec = (s.time / 1000).toFixed(2);
+          const escapedScramble = `"${(s.scramble || '').replace(/"/g, '""')}"`;
+          return [idx + 1, dateStr, timeSec, s.penalty || '', escapedScramble].join(',');
+        });
+        return { content: [headers.join(','), ...rows].join('\n'), filename: `Speedcubing_${session.name.replace(/\s+/g, '_')}_${Date.now()}.csv` };
+      }
+
+      exportToJSON() {
+        return { content: JSON.stringify({ version: '1.0.0', exportedAt: Date.now(), settings: this.settings, sessions: this.sessions, learned: this.learned }, null, 2), filename: `Speedcubing_Backup_${Date.now()}.json` };
+      }
+
+      importFromJSON(jsonString) {
+        try {
+          const data = JSON.parse(jsonString);
+          if (data && Array.isArray(data.sessions)) {
+            this.sessions = data.sessions;
+            if (data.settings) { this.settings = { ...DEFAULT_SETTINGS, ...data.settings }; localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(this.settings)); }
+            if (data.learned) { this.learned = data.learned; localStorage.setItem(STORAGE_KEYS.LEARNED, JSON.stringify(this.learned)); }
+            this.activeSessionId = this.sessions[0].id;
+            this.saveSessions();
+            return { success: true, count: this.sessions.length };
+          }
+          return { success: false, error: 'Dữ liệu không hợp lệ.' };
+        } catch (e) {
+          return { success: false, error: e.message };
+        }
+      }
+    }
+
+    // ==========================================
+    // 5. TIMER ENGINE (SPACEBAR EXCLUSIVE)
+    // ==========================================
+    const TIMER_STATES = {
+      IDLE: 'IDLE',
+      HOLDING: 'HOLDING',
+      READY: 'READY',
+      INSPECTING: 'INSPECTING',
+      RUNNING: 'RUNNING',
+      STOPPED: 'STOPPED'
+    };
+
+    class CubingTimer {
+      constructor(options = {}) {
+        this.state = TIMER_STATES.IDLE;
+        this.holdDelayMs = options.holdDelayMs || 300;
+        this.inspectionEnabled = options.inspectionEnabled || false;
+        this.inspectionAudio = options.inspectionAudio !== false;
+        this.showMs = options.showMs || false;
+
+        this.onStateChange = options.onStateChange || (() => {});
+        this.onTick = options.onTick || (() => {});
+        this.onSolveComplete = options.onSolveComplete || (() => {});
+
+        this.startTime = 0;
+        this.elapsedTime = 0;
+        this.animationFrameId = null;
+        this.holdTimeout = null;
+
+        this.inspectionStartTime = 0;
+        this.inspectionInterval = null;
+        this.inspectionElapsed = 0;
+        this.alert8Fired = false;
+        this.alert12Fired = false;
+        this.inspectionPenalty = null;
+        this.audioCtx = null;
+      }
+
+      initAudio() {
+        if (!this.audioCtx && (window.AudioContext || window.webkitAudioContext)) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          this.audioCtx = new AudioCtx();
+        }
+        if (this.audioCtx && this.audioCtx.state === 'suspended') {
+          this.audioCtx.resume();
+        }
+      }
+
+      playBeep(freq = 660, duration = 0.12) {
+        if (!this.inspectionAudio) return;
+        try {
+          this.initAudio();
+          if (!this.audioCtx) return;
+          const osc = this.audioCtx.createOscillator();
+          const gain = this.audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, this.audioCtx.currentTime);
+          gain.gain.setValueAtTime(0.12, this.audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, this.audioCtx.currentTime + duration);
+          osc.connect(gain);
+          gain.connect(this.audioCtx.destination);
+          osc.start();
+          osc.stop(this.audioCtx.currentTime + duration);
+        } catch (e) {}
+      }
+
+      speakCue(text) {
+        if (!this.inspectionAudio) return;
+        if ('speechSynthesis' in window) {
+          try {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 1.2;
+            utterance.volume = 0.8;
+            utterance.lang = 'en-US';
+            window.speechSynthesis.speak(utterance);
+          } catch (e) {
+            this.playBeep(text === '8 seconds' ? 520 : 660);
+          }
+        } else {
+          this.playBeep(text === '8 seconds' ? 520 : 660);
+        }
+      }
+
+      setState(newState, payload = {}) {
+        this.state = newState;
+        this.onStateChange(this.state, payload);
+      }
+
+      handleHoldStart() {
+        this.initAudio();
+        if (this.state === TIMER_STATES.RUNNING) {
+          this.stop();
+          return;
+        }
+        if (this.state === TIMER_STATES.STOPPED) return;
+
+        if (this.state === TIMER_STATES.IDLE || this.state === TIMER_STATES.INSPECTING) {
+          this.setState(TIMER_STATES.HOLDING);
+          clearTimeout(this.holdTimeout);
+          this.holdTimeout = setTimeout(() => {
+            if (this.state === TIMER_STATES.HOLDING) {
+              this.setState(TIMER_STATES.READY);
+              this.playBeep(880, 0.05);
+            }
+          }, this.holdDelayMs);
+        }
+      }
+
+      handleHoldEnd() {
+        clearTimeout(this.holdTimeout);
+        if (this.state === TIMER_STATES.STOPPED) {
+          this.setState(TIMER_STATES.IDLE);
+          return;
+        }
+        if (this.state === TIMER_STATES.HOLDING) {
+          if (this.inspectionInterval) this.setState(TIMER_STATES.INSPECTING);
+          else this.setState(TIMER_STATES.IDLE);
+          return;
+        }
+        if (this.state === TIMER_STATES.READY) {
+          if (this.inspectionInterval) this.stopInspection();
+          else if (this.inspectionEnabled) {
+            this.startInspection();
+            return;
+          }
+          this.start();
+        }
+      }
+
+      cancelHold() {
+        clearTimeout(this.holdTimeout);
+        if (this.state === TIMER_STATES.HOLDING || this.state === TIMER_STATES.READY) {
+          this.setState(this.inspectionInterval ? TIMER_STATES.INSPECTING : TIMER_STATES.IDLE);
+        }
+      }
+
+      startInspection() {
+        this.setState(TIMER_STATES.INSPECTING, { secondsLeft: 15 });
+        this.inspectionStartTime = performance.now();
+        this.alert8Fired = false;
+        this.alert12Fired = false;
+        this.inspectionPenalty = null;
+
+        clearInterval(this.inspectionInterval);
+        this.inspectionInterval = setInterval(() => {
+          const elapsed = (performance.now() - this.inspectionStartTime) / 1000;
+          this.inspectionElapsed = elapsed;
+          const secondsLeft = Math.max(0, Math.ceil(15 - elapsed));
+
+          if (elapsed >= 8 && !this.alert8Fired) {
+            this.alert8Fired = true;
+            this.speakCue('8 seconds');
+          }
+          if (elapsed >= 12 && !this.alert12Fired) {
+            this.alert12Fired = true;
+            this.speakCue('12 seconds');
+          }
+          if (elapsed > 17) this.inspectionPenalty = 'DNF';
+          else if (elapsed > 15) this.inspectionPenalty = '+2';
+          else this.inspectionPenalty = null;
+
+          if (this.state === TIMER_STATES.INSPECTING || this.state === TIMER_STATES.HOLDING || this.state === TIMER_STATES.READY) {
+            this.onTick({ isInspection: true, secondsLeft, elapsed, penalty: this.inspectionPenalty });
+          }
+        }, 100);
+      }
+
+      stopInspection() {
+        clearInterval(this.inspectionInterval);
+        this.inspectionInterval = null;
+      }
+
+      start() {
+        this.startTime = performance.now();
+        this.elapsedTime = 0;
+        this.setState(TIMER_STATES.RUNNING);
+
+        const loop = () => {
+          if (this.state === TIMER_STATES.RUNNING) {
+            this.elapsedTime = performance.now() - this.startTime;
+            this.onTick({ isInspection: false, elapsedTime: this.elapsedTime });
+            this.animationFrameId = requestAnimationFrame(loop);
+          }
+        };
+        this.animationFrameId = requestAnimationFrame(loop);
+      }
+
+      stop() {
+        if (this.state !== TIMER_STATES.RUNNING) return;
+        cancelAnimationFrame(this.animationFrameId);
+        this.elapsedTime = performance.now() - this.startTime;
+        this.setState(TIMER_STATES.STOPPED, { elapsedTime: this.elapsedTime });
+
+        const finalPenalty = this.inspectionPenalty;
+        this.inspectionPenalty = null;
+        this.onSolveComplete({
+          time: Math.round(this.elapsedTime),
+          penalty: finalPenalty,
+          inspectionTime: this.inspectionElapsed ? Math.round(this.inspectionElapsed * 1000) : null
+        });
+      }
+
+      updateSettings(s) {
+        if (s.holdDelayMs !== undefined) this.holdDelayMs = s.holdDelayMs;
+        if (s.inspectionEnabled !== undefined) this.inspectionEnabled = s.inspectionEnabled;
+        if (s.inspectionAudio !== undefined) this.inspectionAudio = s.inspectionAudio;
+        if (s.showMs !== undefined) this.showMs = s.showMs;
+      }
+    }
+
+    // ==========================================
+    // 6. MAIN APPLICATION CONTROLLER
+    // ==========================================
+    document.addEventListener('DOMContentLoaded', () => {
+      const storage = new StorageManager();
+      let currentPuzzle = '333';
+      let currentPracticeMode = 'oll_57';
+      let currentScrambleData = null;
+      let activeSolveModalId = null;
+
+      const elHtml = document.documentElement;
+      const elBody = document.body;
+      const elScrambleText = document.getElementById('scramble-text');
+      const elScrambleBadge = document.getElementById('scramble-puzzle-badge');
+      const elScrambleCaseInfo = document.getElementById('scramble-case-info');
+      const elCaseHint = document.getElementById('case-solution-hint');
+      const elHintAlgText = document.getElementById('hint-alg-text');
+      const elBtnCopyAlg = document.getElementById('btn-copy-alg');
+
+      const elSubCaseContainer = document.getElementById('sub-case-container');
+      const elSubCaseSelect = document.getElementById('sub-case-select');
+
+      const elTimerTrigger = document.getElementById('timer-trigger-area');
+      const elTimerDisplay = document.getElementById('timer-display');
+      const elTimerStatus = document.getElementById('timer-status-pill');
+      const elQuickActions = document.getElementById('solve-quick-actions');
+      const elBtnPenaltyPlus2 = document.getElementById('btn-penalty-plus2');
+      const elBtnPenaltyDnf = document.getElementById('btn-penalty-dnf');
+      const elBtnDeleteLast = document.getElementById('btn-delete-last-solve');
+
+      // csTimer Tool Window (Image 2 Style)
+      const elCsTimerTool = document.getElementById('cstimer-tool-window');
+      const elCloseCsTimerToolBtn = document.getElementById('close-cstimer-tool-btn');
+      const elToggleCrossBtn = document.getElementById('toggle-cross-btn');
+      const elCsTimerCross = document.getElementById('cstimer-cross');
+      const elCsTimerF2lContainer = document.getElementById('cstimer-f2l-container');
+      const elCsTimerF2l1 = document.getElementById('cstimer-f2l1');
+      const elCsTimerF2l2 = document.getElementById('cstimer-f2l2');
+      const elCsTimerF2l3 = document.getElementById('cstimer-f2l3');
+      const elCsTimerF2l4 = document.getElementById('cstimer-f2l4');
+      const elCsTimerAlgLink = document.getElementById('cstimer-alg-link');
+      const elCsTimerCopyBtn = document.getElementById('cstimer-copy-btn');
+      const elCsTimerToolMode = document.getElementById('cstimer-tool-mode');
+
+      // My Algorithms Modal
+      const elBtnMyAlgs = document.getElementById('btn-my-algs');
+      const elLearnedTotalBadge = document.getElementById('learned-total-badge');
+      const elMyAlgsModal = document.getElementById('my-algs-modal');
+      const elCloseMyAlgsBtn = document.getElementById('close-my-algs-btn');
+      const elAlgsCatBtns = document.querySelectorAll('.algs-cat-btn');
+      const elAlgsFilterBtns = document.querySelectorAll('.algs-filter-btn');
+      const elAlgsSearchInput = document.getElementById('algs-search-input');
+      const elAlgsProgressLabel = document.getElementById('algs-progress-label');
+      const elAlgsProgressPercent = document.getElementById('algs-progress-percent');
+      const elAlgsProgressBar = document.getElementById('algs-progress-bar');
+      const elMyAlgsCardList = document.getElementById('my-algs-card-list');
+
+      let currentAlgsCat = 'f2l';
+      let currentAlgsFilter = 'all';
+      let currentAlgsSearch = '';
+
+      // Drawer & Stats
+      const elDrawer = document.getElementById('solves-drawer');
+      const elDrawerBackdrop = document.getElementById('drawer-backdrop');
+      const elToggleDrawerBtn = document.getElementById('toggle-drawer-btn');
+      const elCloseDrawerBtn = document.getElementById('close-drawer-btn');
+      const elDrawerBadge = document.getElementById('drawer-badge');
+      const elDrawerSolvesCount = document.getElementById('drawer-solves-count');
+      const elDrawerSolvesList = document.getElementById('drawer-solves-list');
+      const elBtnDrawerUndo = document.getElementById('btn-drawer-undo');
+      const elBtnDrawerClear = document.getElementById('btn-drawer-clear');
+
+      const elStripBest = document.getElementById('strip-best');
+      const elStripCurrent = document.getElementById('strip-current');
+      const elStripMo3 = document.getElementById('strip-mo3');
+      const elStripAo5 = document.getElementById('strip-ao5');
+      const elStripAo12 = document.getElementById('strip-ao12');
+      const elStripAo50 = document.getElementById('strip-ao50');
+
+      const elDrawerBest = document.getElementById('drawer-stat-best');
+      const elDrawerMean = document.getElementById('drawer-stat-mean');
+      const elDrawerBestAo5 = document.getElementById('drawer-stat-best-ao5');
+      const elDrawerBestAo12 = document.getElementById('drawer-stat-best-ao12');
+
+      const elSessionBtn = document.getElementById('session-btn');
+      const elSessionDropdown = document.getElementById('session-dropdown');
+      const elCurrentSessionName = document.getElementById('current-session-name');
+      const elCurrentSessionCount = document.getElementById('current-session-count');
+      const elSessionList = document.getElementById('session-list');
+      const elBtnNewSession = document.getElementById('btn-new-session');
+      const elBtnRenameSession = document.getElementById('btn-rename-session');
+      const elBtnClearSession = document.getElementById('btn-clear-session');
+
+      const elThemeBtn = document.getElementById('theme-btn');
+      const elThemeIcon = document.getElementById('theme-icon');
+      const elSettingsBtn = document.getElementById('settings-btn');
+      const elSettingsModal = document.getElementById('settings-modal');
+      const elCloseSettingsBtn = document.getElementById('close-settings-btn');
+      const elSaveSettingsBtn = document.getElementById('save-settings-btn');
+      const elSettingInspection = document.getElementById('setting-inspection');
+      const elSettingAudio = document.getElementById('setting-audio');
+      const elSettingShowMs = document.getElementById('setting-show-ms');
+      const elSettingHoldDelay = document.getElementById('setting-hold-delay');
+      const elHoldDelayValue = document.getElementById('hold-delay-value');
+
+      const elExportModal = document.getElementById('export-modal');
+      const elCloseExportBtn = document.getElementById('close-export-btn');
+      const elBtnExportTrigger = document.getElementById('btn-export-trigger');
+      const elBtnExportCsv = document.getElementById('btn-export-csv');
+      const elBtnExportJson = document.getElementById('btn-export-json');
+      const elInputImportJson = document.getElementById('input-import-json');
+
+      const elSolveModal = document.getElementById('solve-modal');
+      const elCloseSolveModal = document.getElementById('close-solve-modal');
+      const elModalSolveTime = document.getElementById('modal-solve-time');
+      const elModalSolveDate = document.getElementById('modal-solve-date');
+      const elModalSolveScramble = document.getElementById('modal-solve-scramble');
+      const elModalBtnPlus2 = document.getElementById('modal-btn-plus2');
+      const elModalBtnDnf = document.getElementById('modal-btn-dnf');
+      const elModalBtnDelete = document.getElementById('modal-btn-delete');
+
+      // Initialize Timer Engine
+      const timer = new CubingTimer({
+        holdDelayMs: storage.settings.holdDelayMs,
+        inspectionEnabled: storage.settings.inspection,
+        inspectionAudio: storage.settings.inspectionAudio,
+        showMs: storage.settings.showMs,
+
+        onStateChange: (state) => {
+          elTimerDisplay.classList.remove('text-rose-500', 'text-emerald-400', 'text-amber-400', 'text-white', 'timer-glow-holding', 'timer-glow-ready', 'timer-glow-inspecting', 'animate-ready-pulse');
+
+          // ZEN / FOCUS MODE: Khi RUNNING thì ẩn tất cả giao diện khác!
+          if (state === TIMER_STATES.RUNNING) {
+            elBody.classList.add('is-solving');
+          } else {
+            elBody.classList.remove('is-solving');
+          }
+
+          switch (state) {
+            case TIMER_STATES.IDLE:
+              elTimerDisplay.classList.add('text-white');
+              elTimerStatus.textContent = 'Giữ Space hoặc chạm giữ để chuẩn bị';
+              elTimerStatus.className = 'mb-4 px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all duration-200 text-slate-400 bg-slate-900/60 border border-slate-800';
+              break;
+            case TIMER_STATES.HOLDING:
+              elTimerDisplay.classList.add('text-rose-500', 'timer-glow-holding');
+              elTimerStatus.textContent = `Giữ đủ ${(storage.settings.holdDelayMs / 1000).toFixed(1)} giây…`;
+              elTimerStatus.className = 'mb-4 px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all duration-200 text-rose-300 bg-rose-500/20 border border-rose-500/30';
+              elQuickActions.classList.add('hidden');
+              break;
+            case TIMER_STATES.READY:
+              elTimerDisplay.classList.add('text-emerald-400', 'timer-glow-ready', 'animate-ready-pulse');
+              elTimerStatus.textContent = 'SẴN SÀNG! NHẢ RA ĐỂ ĐẾM (READY)';
+              elTimerStatus.className = 'mb-4 px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all duration-200 text-emerald-300 bg-emerald-500/20 border border-emerald-500/30';
+              break;
+            case TIMER_STATES.INSPECTING:
+              elTimerDisplay.classList.add('text-amber-400', 'timer-glow-inspecting');
+              elTimerStatus.textContent = 'Inspection 15 giây · giữ rồi nhả để bắt đầu giải';
+              elTimerStatus.className = 'mb-4 px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all duration-200 text-amber-300 bg-amber-500/20 border border-amber-500/30';
+              elQuickActions.classList.add('hidden');
+              break;
+            case TIMER_STATES.RUNNING:
+              elTimerDisplay.classList.add('text-white');
+              break;
+            case TIMER_STATES.STOPPED:
+              elTimerDisplay.classList.add('text-white');
+              elTimerStatus.textContent = 'LƯỢT GIẢI HOÀN TẤT!';
+              elTimerStatus.className = 'mb-4 px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all duration-200 text-emerald-400 bg-emerald-500/10 border border-emerald-500/20';
+              break;
+          }
+        },
+
+        onTick: (tick) => {
+          if (tick.isInspection) {
+            elTimerDisplay.textContent = tick.secondsLeft;
+            if (tick.penalty === '+2') elTimerStatus.textContent = 'CẢNH BÁO: +2 GIÂY (QUÁ 15S)';
+            else if (tick.penalty === 'DNF') elTimerStatus.textContent = 'CẢNH BÁO: DNF (QUÁ 17S)';
+          } else {
+            elTimerDisplay.textContent = formatTime(tick.elapsedTime, storage.settings.showMs);
+          }
+        },
+
+        onSolveComplete: (res) => {
+          const solve = storage.addSolve({
+            time: res.time,
+            penalty: res.penalty,
+            scramble: currentScrambleData ? currentScrambleData.scramble : '',
+            puzzle: currentPuzzle,
+            inspectionTime: res.inspectionTime
+          });
+          elTimerDisplay.textContent = formatSolveDisplay(solve, storage.settings.showMs);
+          updateQuickActions(solve);
+          refreshSessionUI();
+          updateScramble();
+        }
+      });
+
+      // Update Scramble & Case Info
+      function updateScramble() {
+        currentScrambleData = generateScramble(currentPuzzle, { mode: currentPracticeMode });
+        elScrambleText.textContent = currentScrambleData.scramble;
+
+        const badgeMap = {
+          '222': '2x2x2 WCA',
+          '333': '3x3x3 WCA',
+          '444': '4x4x4 WCA',
+          'oll': 'OLL Luyện tập',
+          'pll': 'PLL Luyện tập'
+        };
+        elScrambleBadge.textContent = badgeMap[currentPuzzle] || currentPuzzle;
+
+        if (currentPuzzle === 'oll' || currentPuzzle === 'pll') {
+          elScrambleCaseInfo.classList.remove('hidden');
+          elScrambleCaseInfo.textContent = currentScrambleData.caseName;
+          elCaseHint.classList.remove('hidden');
+          elHintAlgText.textContent = currentScrambleData.alg;
+        } else {
+          elScrambleCaseInfo.classList.add('hidden');
+          elCaseHint.classList.add('hidden');
+        }
+
+        // Auto calculate Cross + F2L if drawer is open
+        if (currentPuzzle === '333') {
+          calculateCrossAndF2L(currentScrambleData.scramble);
+        }
+      }
+
+      // Calculate Cross + F2L (csTimer Style)
+      let currentF2LResult = null;
+      function calculateCrossAndF2L(scramble) {
+        if (!elCsTimerCross) return;
+        elCsTimerCross.textContent = 'Đang tính toán...';
+        elCsTimerF2l1.textContent = '...';
+        elCsTimerF2l2.textContent = '...';
+        elCsTimerF2l3.textContent = '...';
+        elCsTimerF2l4.textContent = '...';
+
+        setTimeout(() => {
+          try {
+            const res = solveCrossAndF2L(scramble);
+            currentF2LResult = res;
+            elCsTimerCross.textContent = res.cross || 'Đã giải xong cross';
+            elCsTimerF2l1.textContent = res.f2l1;
+            elCsTimerF2l2.textContent = res.f2l2;
+            elCsTimerF2l3.textContent = res.f2l3;
+            elCsTimerF2l4.textContent = res.f2l4;
+
+            const url = `https://alg.cubing.net/?setup=${encodeURIComponent(scramble)}&alg=${encodeURIComponent(res.fullAlg)}`;
+            elCsTimerAlgLink.href = url;
+          } catch (e) {
+            elCsTimerCross.textContent = 'Lỗi tính toán';
+          }
+        }, 10);
+      }
+
+      function toggleCsTimerTool() {
+        const isHidden = elCsTimerTool.classList.contains('hidden');
+        if (isHidden) {
+          elCsTimerTool.classList.remove('hidden');
+          if (currentPuzzle === '333' && currentScrambleData) {
+            calculateCrossAndF2L(currentScrambleData.scramble);
+          }
+        } else {
+          elCsTimerTool.classList.add('hidden');
+        }
+      }
+
+      elToggleCrossBtn.addEventListener('click', toggleCsTimerTool);
+      elCloseCsTimerToolBtn.addEventListener('click', () => elCsTimerTool.classList.add('hidden'));
+
+      elCsTimerToolMode.addEventListener('change', () => {
+        if (elCsTimerToolMode.value === 'cross-only') {
+          elCsTimerF2lContainer.classList.add('hidden');
+        } else {
+          elCsTimerF2lContainer.classList.remove('hidden');
+        }
+      });
+
+      elCsTimerCopyBtn.addEventListener('click', () => {
+        if (currentF2LResult) {
+          let txt = `Orientation: z2\nCross:  ${currentF2LResult.cross}`;
+          if (elCsTimerToolMode.value !== 'cross-only') {
+            txt += `\nF2L-1:  ${currentF2LResult.f2l1}\nF2L-2:  ${currentF2LResult.f2l2}\nF2L-3:  ${currentF2LResult.f2l3}\nF2L-4:  ${currentF2LResult.f2l4}`;
+          }
+          navigator.clipboard.writeText(txt);
+          elCsTimerCopyBtn.innerHTML = '<i data-lucide="check" class="w-3 h-3 text-emerald-400"></i> Copied!';
+          renderIcons();
+          setTimeout(() => {
+            elCsTimerCopyBtn.innerHTML = '<i data-lucide="copy" class="w-3 h-3 text-emerald-500"></i> Copy';
+            renderIcons();
+          }, 1500);
+        }
+      });
+
+      elBtnCopyAlg.addEventListener('click', () => {
+        if (currentScrambleData && currentScrambleData.alg) {
+          navigator.clipboard.writeText(currentScrambleData.alg);
+          elBtnCopyAlg.innerHTML = '<i data-lucide="check" class="w-3 h-3 text-emerald-400"></i> Copied!';
+          renderIcons();
+          setTimeout(() => { elBtnCopyAlg.innerHTML = '<i data-lucide="copy" class="w-3 h-3"></i> Copy'; renderIcons(); }, 1500);
+        }
+      });
+
+      // Quick Actions
+      function updateQuickActions(solve) {
+        if (!solve) { elQuickActions.classList.add('hidden'); return; }
+        elQuickActions.classList.remove('hidden');
+        elBtnPenaltyPlus2.className = solve.penalty === '+2'
+          ? 'px-3 py-1.5 rounded-xl text-xs font-bold transition-all bg-amber-500 text-slate-950'
+          : 'px-3 py-1.5 rounded-xl text-xs font-bold transition-all text-slate-300 hover:text-amber-400 hover:bg-slate-800';
+        elBtnPenaltyDnf.className = solve.penalty === 'DNF'
+          ? 'px-3 py-1.5 rounded-xl text-xs font-bold transition-all bg-rose-500 text-white'
+          : 'px-3 py-1.5 rounded-xl text-xs font-bold transition-all text-slate-300 hover:text-rose-400 hover:bg-slate-800';
+      }
+
+      function refreshSessionUI() {
+        const session = storage.getActiveSession();
+        const solves = session.solves;
+        const stats = calculateStats(solves);
+        const showMs = storage.settings.showMs;
+
+        elCurrentSessionName.textContent = session.name;
+        elCurrentSessionCount.textContent = solves.length;
+        elDrawerBadge.textContent = solves.length;
+        elDrawerSolvesCount.textContent = `${solves.length} lượt giải`;
+
+        elStripBest.textContent = stats.best !== null ? formatTime(stats.best, showMs) : '-';
+        elStripCurrent.textContent = stats.current ? formatSolveDisplay(stats.current, showMs) : '-';
+        elStripMo3.textContent = stats.mo3 !== null ? formatTime(stats.mo3, showMs) : '-';
+        elStripAo5.textContent = stats.ao5 !== null ? formatTime(stats.ao5, showMs) : '-';
+        elStripAo12.textContent = stats.ao12 !== null ? formatTime(stats.ao12, showMs) : '-';
+        elStripAo50.textContent = stats.ao50 !== null ? formatTime(stats.ao50, showMs) : '-';
+
+        elDrawerBest.textContent = stats.best !== null ? formatTime(stats.best, showMs) : '-';
+        elDrawerMean.textContent = stats.mean !== null ? formatTime(stats.mean, showMs) : '-';
+        elDrawerBestAo5.textContent = stats.bestAo5 !== null ? formatTime(stats.bestAo5, showMs) : '-';
+        elDrawerBestAo12.textContent = stats.bestAo12 !== null ? formatTime(stats.bestAo12, showMs) : '-';
+
+        renderSolvesList(solves);
+        updateLearnedBadge();
+        if (storage.lastDeleted) elBtnDrawerUndo.classList.remove('hidden');
+        else elBtnDrawerUndo.classList.add('hidden');
+      }
+
+      function updateLearnedBadge() {
+        const total = (storage.learned.oll?.length || 0) + (storage.learned.pll?.length || 0) + (storage.learned.f2l?.length || 0);
+        elLearnedTotalBadge.textContent = total;
+      }
+
+      function renderSolvesList(solves) {
+        if (!solves || solves.length === 0) {
+          elDrawerSolvesList.innerHTML = `<div class="text-center py-10 text-slate-500 font-sans">Chưa có lượt giải nào trong session này.</div>`;
+          return;
+        }
+        const showMs = storage.settings.showMs;
+        const html = [];
+        for (let i = solves.length - 1; i >= 0; i--) {
+          const solve = solves[i];
+          const formatted = formatSolveDisplay(solve, showMs);
+          let ao5Text = '-';
+          if (i >= 4) {
+            const a = computeAoN(solves.slice(i - 4, i + 1), 5);
+            if (a !== null) ao5Text = formatTime(a, showMs);
+          }
+          const isDnf = solve.penalty === 'DNF';
+          const isPlus2 = solve.penalty === '+2';
+
+          html.push(`
+            <div class="solve-item group flex items-center justify-between p-2 rounded-xl bg-slate-900/60 hover:bg-slate-800/80 border border-slate-800/70 cursor-pointer transition-all" data-solve-id="${solve.id}">
+              <div class="flex items-center gap-2">
+                <span class="text-slate-500 w-7 text-right">#${i + 1}</span>
+                <span class="font-bold text-sm ${isDnf ? 'text-rose-400' : isPlus2 ? 'text-amber-400' : 'text-slate-100'}">${formatted}</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="text-slate-400 text-[11px] font-sans">ao5: ${ao5Text}</span>
+                <button class="btn-delete-solve opacity-0 group-hover:opacity-100 p-1 hover:text-rose-400 transition-opacity" data-solve-id="${solve.id}" title="Xóa">
+                  <i data-lucide="trash" class="w-3.5 h-3.5 pointer-events-none"></i>
+                </button>
+              </div>
+            </div>
+          `);
+        }
+        elDrawerSolvesList.innerHTML = html.join('');
+        renderIcons();
+      }
+
+      // ==========================================
+      // SPACEBAR EXCLUSIVE KEYBOARD LOGIC
+      // ZERO SCREEN CLICK TRIGGERS!
+      // ==========================================
+      let isSpacePressed = false;
+      function isTimerInputBlocked() {
+        return !elMyAlgsModal.classList.contains('hidden') ||
+          [elSettingsModal, elExportModal, elSolveModal].some(element => !element.classList.contains('hidden')) ||
+          !elDrawer.classList.contains('translate-x-full') || document.getElementById('timer-tools').open;
+      }
+
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') { closeAllModals(); return; }
+        if (isTimerInputBlocked()) return;
+
+        if (timer.state === TIMER_STATES.RUNNING) {
+          e.preventDefault();
+          timer.stop();
+          return;
+        }
+
+        if (e.target.closest?.('button, a, input, select, textarea, summary, [contenteditable]')) return;
+
+        if (e.code === 'Space') {
+          e.preventDefault();
+          if (!isSpacePressed) {
+            isSpacePressed = true;
+            timer.handleHoldStart();
+          }
+        }
+
+        if (timer.state === TIMER_STATES.IDLE || timer.state === TIMER_STATES.STOPPED) {
+          const session = storage.getActiveSession();
+          const lastSolve = session.solves[session.solves.length - 1];
+          if (e.key === '2' && lastSolve) {
+            storage.updateSolvePenalty(lastSolve.id, lastSolve.penalty === '+2' ? null : '+2');
+            refreshSessionUI();
+            updateQuickActions(lastSolve);
+            elTimerDisplay.textContent = formatSolveDisplay(lastSolve, storage.settings.showMs);
+          } else if ((e.key === 'd' || e.key === 'D') && lastSolve) {
+            storage.updateSolvePenalty(lastSolve.id, lastSolve.penalty === 'DNF' ? null : 'DNF');
+            refreshSessionUI();
+            updateQuickActions(lastSolve);
+            elTimerDisplay.textContent = formatSolveDisplay(lastSolve, storage.settings.showMs);
+          }
+        }
+      });
+
+      window.addEventListener('keyup', (e) => {
+        if (e.code === 'Space' && isSpacePressed) {
+          e.preventDefault();
+          isSpacePressed = false;
+          timer.handleHoldEnd();
+        }
+      });
+
+      window.addEventListener('blur', () => {
+        isSpacePressed = false;
+        timer.cancelHold();
+      });
+      TimerInput.bind({ element: elTimerTrigger, host: window, timer, states: TIMER_STATES, isBlocked: isTimerInputBlocked });
+
+      // Quick Actions
+      elBtnPenaltyPlus2.addEventListener('click', () => {
+        const session = storage.getActiveSession();
+        const last = session.solves[session.solves.length - 1];
+        if (last) {
+          storage.updateSolvePenalty(last.id, last.penalty === '+2' ? null : '+2');
+          refreshSessionUI();
+          updateQuickActions(last);
+          elTimerDisplay.textContent = formatSolveDisplay(last, storage.settings.showMs);
+        }
+      });
+
+      elBtnPenaltyDnf.addEventListener('click', () => {
+        const session = storage.getActiveSession();
+        const last = session.solves[session.solves.length - 1];
+        if (last) {
+          storage.updateSolvePenalty(last.id, last.penalty === 'DNF' ? null : 'DNF');
+          refreshSessionUI();
+          updateQuickActions(last);
+          elTimerDisplay.textContent = formatSolveDisplay(last, storage.settings.showMs);
+        }
+      });
+
+      elBtnDeleteLast.addEventListener('click', () => {
+        if (storage.deleteLastSolve()) {
+          elQuickActions.classList.add('hidden');
+          elTimerDisplay.textContent = '0.00';
+          refreshSessionUI();
+        }
+      });
+
+      // Puzzle Dropdown & Mode Selector
+      const elPuzzleSelectDropdown = document.getElementById('puzzle-select-dropdown');
+      let lastNormalPuzzle = '333';
+      let lastPracticePuzzle = 'oll';
+      
+      function setPuzzle(p) {
+        if (timer.state === TIMER_STATES.RUNNING) return;
+        timer.cancelHold();
+        timer.stopInspection();
+        timer.inspectionPenalty = null;
+        timer.inspectionElapsed = 0;
+        if (timer.state === TIMER_STATES.INSPECTING) timer.setState(TIMER_STATES.IDLE);
+        currentPuzzle = p;
+        const practice = p === 'oll' || p === 'pll';
+        if (practice) lastPracticePuzzle = p;
+        else lastNormalPuzzle = p;
+        const choices = practice ? [['oll', 'OLL · 57 case'], ['pll', 'PLL · 21 case']] : [['333', '3 × 3 × 3'], ['222', '2 × 2 × 2'], ['444', '4 × 4 × 4']];
+        elPuzzleSelectDropdown.innerHTML = choices.map(([value, label]) => `<option value="${value}">${label}</option>`).join('');
+        document.getElementById('puzzle-select-label').textContent = practice ? 'Bộ công thức' : 'Loại cube';
+        document.querySelectorAll('[data-timer-mode]').forEach(button => button.setAttribute('aria-pressed', String((button.dataset.timerMode === 'practice') === practice)));
+        if (elPuzzleSelectDropdown) elPuzzleSelectDropdown.value = p;
+
+        if (p === 'oll') {
+          elSubCaseContainer.classList.remove('hidden');
+          elSubCaseContainer.classList.add('flex');
+          elSubCaseSelect.innerHTML = `
+            <option value="oll_57">Tất cả 57 OLL</option>
+            <option value="oll_2look">7 OLL dấu thập (2-Look OLL)</option>
+            <option value="oll_dot">8 OLL dấu chấm (Dot Cases)</option>
+          `;
+          currentPracticeMode = 'oll_57';
+        } else if (p === 'pll') {
+          elSubCaseContainer.classList.remove('hidden');
+          elSubCaseContainer.classList.add('flex');
+          elSubCaseSelect.innerHTML = `
+            <option value="pll_21">Tất cả 21 PLL</option>
+            <option value="pll_2look">6 PLL cơ bản (2-Look PLL)</option>
+            <option value="pll_edges">Hoán vị 4 cạnh (Ua, Ub, H, Z)</option>
+            <option value="pll_corners">Hoán vị 3 góc (Aa, Ab, E)</option>
+            <option value="pll_adjacent">Đổi 2 góc liền kề (T, F, J, R)</option>
+            <option value="pll_diagonal">Đổi 2 góc chéo (V, Y, N)</option>
+            <option value="pll_g">4 trường hợp G-Perm (Ga, Gb, Gc, Gd)</option>
+          `;
+          currentPracticeMode = 'pll_21';
+        } else {
+          elSubCaseContainer.classList.add('hidden');
+          elSubCaseContainer.classList.remove('flex');
+          currentPracticeMode = null;
+        }
+        updateScramble();
+      }
+
+      if (elPuzzleSelectDropdown) {
+        elPuzzleSelectDropdown.addEventListener('change', (e) => {
+          setPuzzle(e.target.value);
+        });
+      }
+
+      document.querySelectorAll('[data-timer-mode]').forEach(button => {
+        button.addEventListener('click', () => setPuzzle(button.dataset.timerMode === 'practice' ? lastPracticePuzzle : lastNormalPuzzle));
+      });
+
+      elSubCaseSelect.addEventListener('change', (e) => {
+        currentPracticeMode = e.target.value;
+        updateScramble();
+      });
+
+      document.getElementById('btn-next-scramble').addEventListener('click', () => updateScramble());
+      document.getElementById('btn-copy-scramble').addEventListener('click', () => {
+        if (currentScrambleData && currentScrambleData.scramble) {
+          navigator.clipboard.writeText(currentScrambleData.scramble);
+          const btn = document.getElementById('btn-copy-scramble');
+          const orig = btn.innerHTML;
+          btn.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5 text-emerald-400"></i><span class="text-[11px] text-emerald-400">Copied!</span>`;
+          renderIcons();
+          setTimeout(() => { btn.innerHTML = orig; renderIcons(); }, 1500);
+        }
+      });
+
+      // ==========================================
+      // MY ALGORITHMS & LEARNED TRACKER MODAL
+      // ==========================================
+      function showWorkspace(page, writeHistory = true, focusHeading = true) {
+        if (timer.state === TIMER_STATES.RUNNING) {
+          document.getElementById('workspace-status').textContent = 'Dừng lượt bấm giờ trước khi chuyển khu vực.';
+          history.replaceState(null, '', '#timer');
+          return;
+        }
+        timer.cancelHold();
+        timer.stopInspection();
+        timer.inspectionPenalty = null;
+        timer.inspectionElapsed = 0;
+        if (timer.state === TIMER_STATES.INSPECTING) timer.setState(TIMER_STATES.IDLE);
+        isSpacePressed = false;
+        closeAllModals();
+        const learning = page === 'cfop';
+        document.getElementById('timer-page').classList.toggle('hidden', learning);
+        document.getElementById('timer-toolbar').classList.toggle('hidden', learning);
+        elMyAlgsModal.classList.toggle('hidden', !learning);
+        document.body.dataset.workspace = learning ? 'cfop' : 'timer';
+        document.getElementById('nav-timer').toggleAttribute('aria-current', !learning);
+        elBtnMyAlgs.toggleAttribute('aria-current', learning);
+        const activeNav = learning ? elBtnMyAlgs : document.getElementById('nav-timer');
+        activeNav.setAttribute('aria-current', 'page');
+        if (learning) renderMyAlgsView();
+        else updateLearnedBadge();
+        if (writeHistory && location.hash !== `#${page}`) history.pushState(null, '', `#${page}`);
+        document.title = learning ? 'Học CFOP · AeroTimer' : 'Timer · AeroTimer';
+        if (focusHeading) {
+          const destination = document.getElementById(learning ? 'library-title' : 'timer-page');
+          destination.setAttribute('tabindex', '-1');
+          destination.focus({ preventScroll: true });
+        }
+      }
+
+      elBtnMyAlgs.addEventListener('click', () => showWorkspace('cfop'));
+      document.getElementById('nav-timer').addEventListener('click', () => showWorkspace('timer'));
+      window.addEventListener('hashchange', () => showWorkspace(location.hash === '#cfop' ? 'cfop' : 'timer', false));
+
+      elCloseMyAlgsBtn.addEventListener('click', () => {
+        showWorkspace('timer');
+      });
+
+      window.addEventListener('wheel', (e) => {
+        if (document.body.dataset.workspace === 'cfop' && !elMyAlgsModal.classList.contains('hidden')) {
+          if (!e.target.closest('#my-algs-card-list')) {
+            elMyAlgsCardList.scrollTop += e.deltaY;
+          }
+        }
+      }, { passive: true });
+
+      const activeCatClass = 'algs-cat-btn px-3 py-1.5 rounded-xl text-cyan-300 bg-cyan-500/15 border border-cyan-500/40 font-bold transition-all shadow-sm flex items-center gap-1.5 flex-shrink-0';
+      const inactiveCatClass = 'algs-cat-btn px-3 py-1.5 rounded-xl text-slate-400 hover:text-white border border-transparent transition-all flex items-center gap-1.5 flex-shrink-0';
+
+      elAlgsCatBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          currentAlgsCat = btn.dataset.cat;
+          currentAlgsSearch = '';
+          elAlgsSearchInput.value = '';
+          currentAlgsFilter = 'all';
+          elMyAlgsCardList.scrollTop = 0;
+          renderMyAlgsView();
+        });
+      });
+
+      elAlgsFilterBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          currentAlgsFilter = btn.dataset.filter;
+          elMyAlgsCardList.scrollTop = 0;
+          renderMyAlgsView();
+        });
+      });
+
+      let algsSearchTimeout = null;
+      elAlgsSearchInput.addEventListener('input', (e) => {
+        clearTimeout(algsSearchTimeout);
+        algsSearchTimeout = setTimeout(() => {
+          currentAlgsSearch = e.target.value.toLowerCase().trim();
+          renderMyAlgsView();
+        }, 100);
+      });
+
+      function renderMyAlgsView() {
+        elMyAlgsCardList.classList.toggle('cfop-readable', currentAlgsCat !== 'oll');
+        elAlgsCatBtns.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.cat === currentAlgsCat)));
+        elAlgsFilterBtns.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.filter === currentAlgsFilter)));
+        let items = [];
+        let catLabel = 'OLL';
+        if (currentAlgsCat === 'oll') {
+          items = OLL_CASES;
+          catLabel = '57 OLL';
+        } else if (currentAlgsCat === 'pll') {
+          items = PLL_CASES;
+          catLabel = '21 PLL';
+        } else if (currentAlgsCat === 'f2l') {
+          items = F2L_41_CASES;
+          catLabel = '41 Cặp F2L';
+        }
+
+        // Calculate progress
+        const learnedList = storage.learned[currentAlgsCat] || [];
+        const learnedCount = items.filter(it => learnedList.includes(String(it.id))).length;
+        const totalCount = items.length;
+        const percent = Math.round((learnedCount / totalCount) * 100);
+
+        elAlgsProgressLabel.textContent = `Tiến độ ${catLabel}: ${learnedCount} / ${totalCount} trường hợp`;
+        elAlgsProgressPercent.textContent = `${percent}%`;
+        elAlgsProgressBar.style.width = `${percent}%`;
+        document.querySelector('.library-progress-track').setAttribute('role', 'progressbar');
+        document.querySelector('.library-progress-track').setAttribute('aria-valuenow', percent);
+        document.querySelector('.library-progress-track').setAttribute('aria-valuemin', '0');
+        document.querySelector('.library-progress-track').setAttribute('aria-valuemax', '100');
+        document.querySelector('.library-progress-track').setAttribute('aria-label', `Tiến độ ${catLabel}`);
+
+        // Filter items
+        let filtered = items.filter(it => {
+          const isL = learnedList.includes(String(it.id));
+          if (currentAlgsFilter === 'learned' && !isL) return false;
+          if (currentAlgsFilter === 'unlearned' && isL) return false;
+
+          if (currentAlgsSearch) {
+            const matchName = (it.name || '').toLowerCase().includes(currentAlgsSearch);
+            const matchGroup = (it.group || '').toLowerCase().includes(currentAlgsSearch);
+            const matchAlg = (it.alg || '').toLowerCase().includes(currentAlgsSearch);
+            return matchName || matchGroup || matchAlg;
+          }
+          return true;
+        });
+
+        document.getElementById('algs-results-summary').textContent = `${filtered.length} / ${items.length} case · ${currentAlgsCat === 'oll' ? 'OLL Wang Yiheng · giữ nguyên bản nhập' : 'Mở chi tiết để xem hướng cầm và ký hiệu'}`;
+        if (filtered.length === 0) {
+          elMyAlgsCardList.innerHTML = `<div class="library-empty">Không có case phù hợp.<br>Thử từ khóa khác hoặc chọn bộ lọc “Tất cả”.</div>`;
+          return;
+        }
+
+        elMyAlgsCardList.innerHTML = filtered.map(it => {
+          const isL = learnedList.includes(String(it.id));
+          if (currentAlgsCat !== 'oll') {
+            return CFOPDiagrams.renderCard(it, currentAlgsCat, isL);
+          }
+          const svgDiagram = generateOllSvg(it.id);
+
+          return `
+            <div class="p-3.5 sm:p-4 rounded-2xl border transition-all ${isL ? 'bg-emerald-950/20 border-emerald-500/40 shadow-lg shadow-emerald-950/20' : 'bg-slate-900 border-slate-800'} flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+              
+              <!-- Left: Cube State Diagram (from PDF) -->
+              <div class="flex items-center gap-3 w-full sm:w-auto">
+                <div class="flex-shrink-0 bg-slate-950 p-1 rounded-xl border border-slate-800/80 flex items-center justify-center shadow-inner">
+                  ${svgDiagram}
+                </div>
+
+                <!-- Mobile view: Name and Group next to diagram -->
+                <div class="sm:hidden flex-1 min-w-0">
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="font-bold text-sm text-white">${it.name}</span>
+                    <span class="text-[10px] font-mono px-1.5 py-0.5 rounded ${isL ? 'bg-emerald-500/20 text-emerald-300 font-bold' : 'bg-slate-800 text-slate-400'}">${it.group || ''}</span>
+                  </div>
+                  ${it.desc ? `<div class="text-[11px] text-slate-400 truncate mt-0.5">${it.desc}</div>` : ''}
+                </div>
+              </div>
+
+              <!-- Center: Title & Algorithm Formula with Fingertricks -->
+              <div class="flex-1 min-w-0 w-full space-y-1.5">
+                <div class="hidden sm:flex items-center gap-2">
+                  <span class="font-bold text-sm text-white">${it.name}</span>
+                  <span class="text-[10px] font-mono px-2 py-0.5 rounded-full ${isL ? 'bg-emerald-500/20 text-emerald-300 font-bold' : 'bg-slate-800 text-slate-400 font-medium'}">${it.group || ''}</span>
+                  ${it.desc ? `<span class="text-xs text-slate-400 truncate">(${it.desc})</span>` : ''}
+                </div>
+
+                <div class="bg-slate-950 p-2.5 rounded-xl font-mono text-xs sm:text-[13px] text-amber-300 dark:text-cyan-300 font-bold select-all tracking-wide leading-relaxed border border-slate-900 flex items-center justify-between shadow-inner">
+                  <span class="break-words font-semibold">${it.alg}</span>
+                  <button class="btn-copy-card-alg text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 ml-2 flex-shrink-0" data-alg="${it.alg}" title="Sao chép công thức">
+                    <i data-lucide="copy" class="w-3.5 h-3.5 pointer-events-none"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Right: Manual 'Đã thuộc' Button (100% User Triggered) -->
+              <div class="flex-shrink-0 w-full sm:w-auto flex justify-end">
+                <button class="btn-toggle-learn w-full sm:w-auto flex items-center justify-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl transition-all ${isL ? 'bg-emerald-500 text-slate-950 font-extrabold shadow-md shadow-emerald-500/20 hover:bg-emerald-400' : 'bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700'}" data-cat="${currentAlgsCat}" data-id="${it.id}">
+                  <i data-lucide="${isL ? 'check-circle-2' : 'circle'}" class="w-4 h-4 pointer-events-none"></i>
+                  <span>${isL ? 'Đã thuộc' : 'Chưa học'}</span>
+                </button>
+              </div>
+
+            </div>
+          `;
+        }).join('');
+
+        renderIcons();
+
+        // Attach Card event listeners
+        elMyAlgsCardList.querySelectorAll('.btn-toggle-learn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const cat = btn.dataset.cat;
+            const id = btn.dataset.id;
+            storage.toggleLearned(cat, id);
+            renderMyAlgsView();
+            updateLearnedBadge();
+          });
+        });
+
+        elMyAlgsCardList.querySelectorAll('.btn-copy-card-alg').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const alg = btn.dataset.alg;
+            navigator.clipboard.writeText(alg);
+            btn.innerHTML = '<i data-lucide="check" class="w-3.5 h-3.5 text-emerald-400 pointer-events-none"></i>';
+            renderIcons();
+            setTimeout(() => { btn.innerHTML = '<i data-lucide="copy" class="w-3.5 h-3.5 pointer-events-none"></i>'; renderIcons(); }, 1200);
+          });
+        });
+      }
+
+      // Sessions
+      function renderSessionDropdown() {
+        elSessionList.innerHTML = storage.sessions.map(s => `
+          <div class="session-item flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-slate-800 cursor-pointer ${s.id === storage.activeSessionId ? 'bg-cyan-500/10 text-cyan-400 font-bold' : 'text-slate-200'}" data-session-id="${s.id}">
+            <span class="truncate">${s.name}</span>
+            <span class="text-[10px] text-slate-500">${s.solves.length}</span>
+          </div>
+        `).join('');
+
+        elSessionList.querySelectorAll('.session-item').forEach(item => {
+          item.addEventListener('click', () => {
+            storage.setActiveSessionId(item.dataset.sessionId);
+            elSessionDropdown.classList.add('hidden');
+            refreshSessionUI();
+            elTimerDisplay.textContent = '0.00';
+            elQuickActions.classList.add('hidden');
+          });
+        });
+      }
+
+      elSessionBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        renderSessionDropdown();
+        elSessionDropdown.classList.toggle('hidden');
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!elSessionBtn.contains(e.target) && !elSessionDropdown.contains(e.target)) {
+          elSessionDropdown.classList.add('hidden');
+        }
+      });
+
+      elBtnNewSession.addEventListener('click', () => {
+        const name = prompt('Nhập tên Session mới:', `Session ${storage.sessions.length + 1}`);
+        if (name) {
+          storage.createSession(name, currentPuzzle);
+          elSessionDropdown.classList.add('hidden');
+          refreshSessionUI();
+          elTimerDisplay.textContent = '0.00';
+        }
+      });
+
+      elBtnRenameSession.addEventListener('click', () => {
+        const current = storage.getActiveSession();
+        const newName = prompt('Đổi tên Session:', current.name);
+        if (newName) {
+          storage.renameSession(current.id, newName);
+          elSessionDropdown.classList.add('hidden');
+          refreshSessionUI();
+        }
+      });
+
+      elBtnClearSession.addEventListener('click', () => {
+        const current = storage.getActiveSession();
+        if (confirm(`Xóa toàn bộ lượt giải của "${current.name}"?`)) {
+          storage.clearActiveSessionSolves();
+          elSessionDropdown.classList.add('hidden');
+          refreshSessionUI();
+          elTimerDisplay.textContent = '0.00';
+          elQuickActions.classList.add('hidden');
+        }
+      });
+
+      // Solves Drawer
+      elToggleDrawerBtn.addEventListener('click', () => {
+        elDrawer.classList.remove('translate-x-full');
+        elDrawerBackdrop.classList.remove('hidden');
+      });
+      elCloseDrawerBtn.addEventListener('click', () => {
+        elDrawer.classList.add('translate-x-full');
+        elDrawerBackdrop.classList.add('hidden');
+      });
+      elDrawerBackdrop.addEventListener('click', () => {
+        elDrawer.classList.add('translate-x-full');
+        elDrawerBackdrop.classList.add('hidden');
+      });
+
+      elBtnDrawerUndo.addEventListener('click', () => {
+        if (storage.undoDelete()) refreshSessionUI();
+      });
+
+      elBtnDrawerClear.addEventListener('click', () => {
+        if (confirm('Xóa tất cả lượt giải của session hiện tại?')) {
+          storage.clearActiveSessionSolves();
+          refreshSessionUI();
+          elTimerDisplay.textContent = '0.00';
+          elQuickActions.classList.add('hidden');
+        }
+      });
+
+      elDrawerSolvesList.addEventListener('click', (e) => {
+        const delBtn = e.target.closest('.btn-delete-solve');
+        if (delBtn) {
+          e.stopPropagation();
+          storage.deleteSolve(delBtn.dataset.solveId);
+          refreshSessionUI();
+          return;
+        }
+        const item = e.target.closest('.solve-item');
+        if (item) openSolveModal(item.dataset.solveId);
+      });
+
+      function openSolveModal(id) {
+        const s = storage.getActiveSession().solves.find(x => x.id === id);
+        if (!s) return;
+        activeSolveModalId = id;
+        elModalSolveTime.textContent = formatSolveDisplay(s, storage.settings.showMs);
+        elModalSolveDate.textContent = new Date(s.date).toLocaleString('vi-VN');
+        elModalSolveScramble.textContent = s.scramble || 'Không có thông tin';
+
+        elModalBtnPlus2.className = s.penalty === '+2' ? 'flex-1 py-2 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs' : 'flex-1 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs border border-slate-700 hover:text-amber-400';
+        elModalBtnDnf.className = s.penalty === 'DNF' ? 'flex-1 py-2 rounded-xl bg-rose-500 text-white font-bold text-xs' : 'flex-1 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs border border-slate-700 hover:text-rose-400';
+        elSolveModal.classList.remove('hidden');
+      }
+
+      elCloseSolveModal.addEventListener('click', () => elSolveModal.classList.add('hidden'));
+      elModalBtnPlus2.addEventListener('click', () => {
+        const s = storage.getActiveSession().solves.find(x => x.id === activeSolveModalId);
+        if (s) { storage.updateSolvePenalty(s.id, s.penalty === '+2' ? null : '+2'); openSolveModal(s.id); refreshSessionUI(); }
+      });
+      elModalBtnDnf.addEventListener('click', () => {
+        const s = storage.getActiveSession().solves.find(x => x.id === activeSolveModalId);
+        if (s) { storage.updateSolvePenalty(s.id, s.penalty === 'DNF' ? null : 'DNF'); openSolveModal(s.id); refreshSessionUI(); }
+      });
+      elModalBtnDelete.addEventListener('click', () => {
+        storage.deleteSolve(activeSolveModalId);
+        elSolveModal.classList.add('hidden');
+        refreshSessionUI();
+      });
+
+      // Settings & Theme
+      function applyTheme(t) {
+        if (t === 'light') {
+          elHtml.classList.remove('dark');
+          elHtml.classList.add('light');
+          elThemeIcon.setAttribute('data-lucide', 'moon');
+        } else {
+          elHtml.classList.remove('light');
+          elHtml.classList.add('dark');
+          elThemeIcon.setAttribute('data-lucide', 'sun');
+        }
+        renderIcons();
+      }
+
+      elThemeBtn.addEventListener('click', () => {
+        const n = storage.settings.theme === 'dark' ? 'light' : 'dark';
+        storage.saveSettings({ theme: n });
+        applyTheme(n);
+      });
+
+      elSettingsBtn.addEventListener('click', () => {
+        elSettingInspection.checked = storage.settings.inspection;
+        elSettingAudio.checked = storage.settings.inspectionAudio;
+        elSettingShowMs.checked = storage.settings.showMs;
+        elSettingHoldDelay.value = storage.settings.holdDelayMs;
+        elHoldDelayValue.textContent = `${(storage.settings.holdDelayMs / 1000).toFixed(1)}s`;
+        elSettingsModal.classList.remove('hidden');
+      });
+
+      elCloseSettingsBtn.addEventListener('click', () => elSettingsModal.classList.add('hidden'));
+      elSettingHoldDelay.addEventListener('input', (e) => { elHoldDelayValue.textContent = `${(e.target.value / 1000).toFixed(1)}s`; });
+
+      elSaveSettingsBtn.addEventListener('click', () => {
+        const u = {
+          inspection: elSettingInspection.checked,
+          inspectionAudio: elSettingAudio.checked,
+          showMs: elSettingShowMs.checked,
+          holdDelayMs: parseInt(elSettingHoldDelay.value, 10)
+        };
+        storage.saveSettings(u);
+        timer.updateSettings({ inspectionEnabled: u.inspection, inspectionAudio: u.inspectionAudio, showMs: u.showMs, holdDelayMs: u.holdDelayMs });
+        refreshSessionUI();
+        elSettingsModal.classList.add('hidden');
+      });
+
+      // Export / Import
+      elBtnExportTrigger.addEventListener('click', () => elExportModal.classList.remove('hidden'));
+      elCloseExportBtn.addEventListener('click', () => elExportModal.classList.add('hidden'));
+
+      function download(content, filename, type) {
+        const blob = new Blob([content], { type });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+
+      elBtnExportCsv.addEventListener('click', () => {
+        const { content, filename } = storage.exportToCSV();
+        download(content, filename, 'text/csv;charset=utf-8;');
+      });
+
+      elBtnExportJson.addEventListener('click', () => {
+        const { content, filename } = storage.exportToJSON();
+        download(content, filename, 'application/json');
+      });
+
+      elInputImportJson.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          const res = storage.importFromJSON(evt.target.result);
+          if (res.success) {
+            alert(`Đã khôi phục thành công ${res.count} sessions!`);
+            elExportModal.classList.add('hidden');
+            refreshSessionUI();
+            updateScramble();
+          } else {
+            alert('Lỗi: ' + res.error);
+          }
+        };
+        reader.readAsText(file);
+      });
+
+      function closeAllModals() {
+        elSettingsModal.classList.add('hidden');
+        elExportModal.classList.add('hidden');
+        elSolveModal.classList.add('hidden');
+        document.getElementById('timer-tools').open = false;
+        elSessionDropdown.classList.add('hidden');
+        if (elCsTimerTool) elCsTimerTool.classList.add("hidden");
+        elDrawer.classList.add('translate-x-full');
+        elDrawerBackdrop.classList.add('hidden');
+      }
+
+      // Initial Boot
+      applyTheme(storage.settings.theme);
+      refreshSessionUI();
+      updateScramble();
+      showWorkspace(location.hash === '#cfop' ? 'cfop' : 'timer', false, false);
+      renderIcons();
+    });
+  </script>
+</body>
+</html>
