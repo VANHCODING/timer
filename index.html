@@ -142,20 +142,6 @@
     }
 
     
-    /* csTimer Floating Window Styling (Image 2 Match) */
-    #cstimer-tool-window {
-      background: #FFF5EE;
-      border: 1px solid #E2D4C8;
-      color: #1E293B;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
-    }
-    html.dark #cstimer-tool-window {
-      background: #0E1626;
-      border: 1px solid #1E2D4A;
-      color: #E2E8F0;
-      box-shadow: 0 16px 36px -5px rgba(0, 0, 0, 0.55), 0 10px 15px -6px rgba(0, 0, 0, 0.4);
-    }
-
     /* Light Theme Overrides */
     html.light .bg-\[\#0B0F17\] { background-color: #F8FAFC !important; }
     html.light header.bg-\[\#0B0F17\]\/85 { background-color: rgba(248, 250, 252, 0.9) !important; border-color: #E2E8F0 !important; }
@@ -232,7 +218,7 @@
       <details id="timer-tools" class="timer-tools">
         <summary class="toolbar-button"><i data-lucide="sliders-horizontal"></i><span>Công cụ</span><i data-lucide="chevron-down"></i></summary>
         <div class="timer-tools-menu">
-          <button id="toggle-cross-btn"><i data-lucide="sparkles"></i><span>Gợi ý Cross + F2L</span></button>
+          <button id="toggle-cross-btn" aria-controls="cstimer-tool-window" aria-expanded="false"><i data-lucide="sparkles"></i><span>Gợi ý Cross + F2L</span></button>
           <button id="settings-btn"><i data-lucide="settings"></i><span>Cài đặt Timer</span></button>
         </div>
       </details>
@@ -242,6 +228,7 @@
   <!-- ========================================================
        MAIN APP CONTAINER (BALANCED & CLEAN)
        ======================================================== -->
+  <div id="timer-layout">
   <main id="timer-page" class="flex-1 flex flex-col items-center justify-between max-w-5xl w-full mx-auto px-4 py-4 sm:py-6 relative z-10 transition-all duration-200" aria-label="Timer">
 
     <!-- SCRAMBLE AREA (NEVER DISRUPTED BY SOLVER) -->
@@ -290,7 +277,7 @@
     <!-- ========================================================
          MAIN TIMER SECTION (SPACEBAR ONLY - ZEN FOCUS MODE)
          ======================================================== -->
-    <section id="timer-trigger-area" tabindex="-1" aria-label="Bấm giờ bằng Space hoặc chạm giữ" class="w-full flex-1 flex flex-col items-center justify-center my-4 py-6 select-none transition-all duration-200">
+    <section id="timer-trigger-area" tabindex="-1" aria-label="Máy tính: phím Space. Điện thoại: chạm giữ." class="w-full flex-1 flex flex-col items-center justify-center my-4 py-6 select-none transition-all duration-200">
       
       <!-- Status Pill -->
       <div id="timer-status-pill" class="mb-4 px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all duration-200 text-slate-400 bg-slate-900/60 border border-slate-800">
@@ -350,73 +337,32 @@
 
   </main>
 
-  <!-- ========================================================
-       CSTIMER FLOATING TOOL WINDOW (EXACT STYLE FROM IMAGE 2)
-       Orientation: z2 | Cross + 4 F2L | alg.cubing.net | Dropdowns
-       Zero layout shift - Timer NEVER drops down!
-       ======================================================== -->
-  <div id="cstimer-tool-window" class="hidden fixed top-16 sm:top-20 left-3 sm:left-6 z-30 w-[calc(100vw-24px)] sm:w-[410px] rounded-2xl p-4 space-y-3 transition-all duration-200 select-text">
-    
-    <!-- Top Bar: Handle + Orientation + Close -->
-    <div class="flex items-center justify-between pb-2 border-b border-slate-300 dark:border-slate-800/80">
-      <div class="flex items-center gap-2">
-        <span class="w-3.5 h-3.5 rounded-full bg-slate-400/40 dark:bg-slate-600/60 inline-block shadow-inner" title="csTimer Widget"></span>
-        <span class="text-xs sm:text-sm font-mono font-semibold text-slate-800 dark:text-slate-200">Orientation:</span>
-        <span class="px-1.5 py-0.5 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-mono font-bold text-xs text-slate-900 dark:text-amber-400 shadow-sm">z2</span>
-      </div>
-      <button id="close-cstimer-tool-btn" title="Đóng bảng công cụ" class="w-6 h-6 rounded-md hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-white flex items-center justify-center transition-colors">
-        <i data-lucide="x" class="w-3.5 h-3.5"></i>
-      </button>
+  <aside id="cstimer-tool-window" class="hidden cross-hint-panel" aria-labelledby="cross-hint-title">
+    <div class="cross-hint-heading">
+      <h2 id="cross-hint-title">Gợi ý Cross + F2L</h2>
+      <button id="close-cstimer-tool-btn" title="Đóng gợi ý" aria-label="Đóng gợi ý Cross + F2L"><i data-lucide="x"></i></button>
     </div>
-
-    <!-- Move Formulas Area (Exact Monospace Columns) -->
-    <div class="space-y-1.5 font-mono text-xs sm:text-sm font-semibold select-text leading-relaxed">
-      <div class="flex items-center gap-3">
-        <span class="w-16 text-slate-500 dark:text-slate-400 font-bold flex-shrink-0">Cross:</span>
-        <span id="cstimer-cross" class="text-slate-950 dark:text-emerald-400 font-extrabold tracking-widest break-all">R D R' D' R</span>
-      </div>
-      <div id="cstimer-f2l-container" class="space-y-1.5">
-        <div class="flex items-center gap-3">
-          <span class="w-16 text-slate-500 dark:text-slate-400 font-bold flex-shrink-0">F2L-1:</span>
-          <span id="cstimer-f2l1" class="text-slate-800 dark:text-slate-200 font-medium tracking-wide break-all">L' U L R U' R'</span>
-        </div>
-        <div class="flex items-center gap-3">
-          <span class="w-16 text-slate-500 dark:text-slate-400 font-bold flex-shrink-0">F2L-2:</span>
-          <span id="cstimer-f2l2" class="text-slate-800 dark:text-slate-200 font-medium tracking-wide break-all">L B L B' L'</span>
-        </div>
-        <div class="flex items-center gap-3">
-          <span class="w-16 text-slate-500 dark:text-slate-400 font-bold flex-shrink-0">F2L-3:</span>
-          <span id="cstimer-f2l3" class="text-slate-800 dark:text-slate-200 font-medium tracking-wide break-all">R' U' B' U B R</span>
-        </div>
-        <div class="flex items-center gap-3">
-          <span class="w-16 text-slate-500 dark:text-slate-400 font-bold flex-shrink-0">F2L-4:</span>
-          <span id="cstimer-f2l4" class="text-slate-800 dark:text-slate-200 font-medium tracking-wide break-all">U L F U F' U2 L'</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- alg.cubing.net Link + Copy -->
-    <div class="flex items-center justify-between pt-1">
-      <a id="cstimer-alg-link" href="#" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-cyan-400 hover:underline text-xs sm:text-sm font-mono font-medium flex items-center gap-1">
-        alg.cubing.net
-      </a>
-      <button id="cstimer-copy-btn" title="Sao chép toàn bộ công thức" class="text-xs px-2.5 py-1 rounded-lg bg-slate-200/80 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-mono flex items-center gap-1 transition-all">
-        <i data-lucide="copy" class="w-3 h-3 text-emerald-500"></i> Copy
-      </button>
-    </div>
-
-    <!-- Footer Tool Selector (Matching Image 2 Bottom-Right) -->
-    <div class="flex items-center justify-end gap-1.5 pt-2 border-t border-slate-300 dark:border-slate-800/80 text-xs text-slate-500 dark:text-slate-400">
-      <span class="text-[11px] font-medium">Chức năng</span>
-      <select class="rounded-lg px-2 py-0.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs cursor-pointer focus:outline-none">
-        <option>Công cụ giải</option>
-      </select>
-      <select id="cstimer-tool-mode" class="rounded-lg px-2 py-0.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold cursor-pointer focus:outline-none">
+    <div class="cross-hint-options">
+      <span>Cầm cube: <strong class="font-mono">z2</strong></span>
+      <select id="cstimer-tool-mode" aria-label="Nội dung gợi ý">
         <option value="cross-f2l">Cross + F2L</option>
         <option value="cross-only">Chỉ White Cross</option>
       </select>
     </div>
-
+    <div class="cross-hint-moves" tabindex="0" aria-label="Các bước giải Cross và F2L">
+      <div class="cross-hint-row"><span>Cross</span><strong id="cstimer-cross">Đang tính toán...</strong></div>
+      <div id="cstimer-f2l-container">
+        <div class="cross-hint-row"><span>F2L 1</span><span id="cstimer-f2l1">...</span></div>
+        <div class="cross-hint-row"><span>F2L 2</span><span id="cstimer-f2l2">...</span></div>
+        <div class="cross-hint-row"><span>F2L 3</span><span id="cstimer-f2l3">...</span></div>
+        <div class="cross-hint-row"><span>F2L 4</span><span id="cstimer-f2l4">...</span></div>
+      </div>
+    </div>
+    <div class="cross-hint-actions">
+      <a id="cstimer-alg-link" href="#" target="_blank" rel="noopener noreferrer">alg.cubing.net <i data-lucide="external-link"></i></a>
+      <button id="cstimer-copy-btn" title="Sao chép toàn bộ công thức"><i data-lucide="copy"></i> Copy</button>
+    </div>
+  </aside>
   </div>
 
   <!-- ========================================================
@@ -1727,7 +1673,7 @@
           switch (state) {
             case TIMER_STATES.IDLE:
               elTimerDisplay.classList.add('text-white');
-              elTimerStatus.textContent = 'Giữ Space hoặc chạm giữ để chuẩn bị';
+              elTimerStatus.textContent = TimerInput.supportsTouch(window) ? 'Chạm giữ đồng hồ để chuẩn bị' : 'Giữ Space để chuẩn bị';
               elTimerStatus.className = 'mb-4 px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all duration-200 text-slate-400 bg-slate-900/60 border border-slate-800';
               break;
             case TIMER_STATES.HOLDING:
@@ -1806,8 +1752,12 @@
           elCaseHint.classList.add('hidden');
         }
 
-        // Auto calculate Cross + F2L if drawer is open
-        if (currentPuzzle === '333') {
+        elToggleCrossBtn.disabled = currentPuzzle !== '333';
+        if (currentPuzzle !== '333') {
+          elCsTimerTool.classList.add('hidden');
+          elToggleCrossBtn.setAttribute('aria-expanded', 'false');
+        }
+        if (currentPuzzle === '333' && !elCsTimerTool.classList.contains('hidden')) {
           calculateCrossAndF2L(currentScrambleData.scramble);
         }
       }
@@ -1841,7 +1791,10 @@
       }
 
       function toggleCsTimerTool() {
+        if (currentPuzzle !== '333') return;
+        document.getElementById('timer-tools').open = false;
         const isHidden = elCsTimerTool.classList.contains('hidden');
+        elToggleCrossBtn.setAttribute('aria-expanded', String(isHidden));
         if (isHidden) {
           elCsTimerTool.classList.remove('hidden');
           if (currentPuzzle === '333' && currentScrambleData) {
@@ -1853,7 +1806,11 @@
       }
 
       elToggleCrossBtn.addEventListener('click', toggleCsTimerTool);
-      elCloseCsTimerToolBtn.addEventListener('click', () => elCsTimerTool.classList.add('hidden'));
+      elCloseCsTimerToolBtn.addEventListener('click', () => {
+        elCsTimerTool.classList.add('hidden');
+        elToggleCrossBtn.setAttribute('aria-expanded', 'false');
+        elTimerTrigger.focus({ preventScroll: true });
+      });
 
       elCsTimerToolMode.addEventListener('change', () => {
         if (elCsTimerToolMode.value === 'cross-only') {
@@ -1991,7 +1948,7 @@
           return;
         }
 
-        if (timer.state === TIMER_STATES.RUNNING) {
+        if (timer.state === TIMER_STATES.RUNNING && e.code === 'Space') {
           e.preventDefault();
           timer.stop();
           return;
@@ -2166,6 +2123,7 @@
         isSpacePressed = false;
         closeAllModals();
         const learning = page === 'cfop';
+        document.getElementById('timer-layout').classList.toggle('hidden', learning);
         document.getElementById('timer-page').classList.toggle('hidden', learning);
         document.getElementById('timer-toolbar').classList.toggle('hidden', learning);
         elMyAlgsModal.classList.toggle('hidden', !learning);
@@ -2279,7 +2237,7 @@
           return true;
         });
 
-        document.getElementById('algs-results-summary').textContent = `${filtered.length} / ${items.length} case · ${currentAlgsCat === 'oll' ? 'OLL Wang Yiheng · đã đối chiếu PDF' : 'Mở chi tiết để xem hướng cầm và ký hiệu'}`;
+        document.getElementById('algs-results-summary').textContent = `${filtered.length} / ${items.length} case · ${currentAlgsCat === 'oll' ? 'OLL Wang Yiheng · đã đối chiếu PDF' : 'Hướng cầm ghi ngay dưới hình minh họa'}`;
         if (filtered.length === 0) {
           elMyAlgsCardList.innerHTML = `<div class="library-empty">Không có case phù hợp.<br>Thử từ khóa khác hoặc chọn bộ lọc “Tất cả”.</div>`;
           return;
@@ -2555,6 +2513,7 @@
         document.getElementById('timer-tools').open = false;
         elSessionDropdown.classList.add('hidden');
         if (elCsTimerTool) elCsTimerTool.classList.add("hidden");
+        elToggleCrossBtn.setAttribute('aria-expanded', 'false');
         elDrawer.classList.add('translate-x-full');
         elDrawerBackdrop.classList.add('hidden');
         if (elMyAlgsModal.classList.contains('hidden')) elTimerTrigger.focus({ preventScroll: true });
@@ -2562,6 +2521,7 @@
 
       // Initial Boot
       applyTheme(storage.settings.theme);
+      timer.setState(TIMER_STATES.IDLE);
       refreshSessionUI();
       updateScramble();
       showWorkspace(location.hash === '#cfop' ? 'cfop' : 'timer', false, false);

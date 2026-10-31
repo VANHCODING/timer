@@ -2,6 +2,10 @@
   'use strict';
 
   const TimerInput = {
+    supportsTouch(host) {
+      return host.matchMedia?.('(hover: none) and (pointer: coarse)').matches === true;
+    },
+
     bind({ element, host = window, timer, states, isBlocked = () => false }) {
       if (!element || !timer) return () => {};
 
@@ -18,15 +22,15 @@
       }
 
       function onPointerDown(e) {
+        if (e.pointerType !== 'touch' || !TimerInput.supportsTouch(host)) return;
         if (stoppedPointerId === e.pointerId) return;
+        if (shouldIgnore(e)) return;
         if (timer.state === states.RUNNING) {
           if (e.cancelable) e.preventDefault();
           timer.stop();
           return;
         }
 
-        if (shouldIgnore(e)) return;
-        if (e.pointerType === 'mouse' && e.button !== 0) return;
         if (activePointerId !== null && activePointerId !== e.pointerId) return;
 
         activePointerId = e.pointerId;
@@ -46,6 +50,11 @@
 
         if (!isTouching) return;
         isTouching = false;
+
+        if (isBlocked()) {
+          timer.cancelHold();
+          return;
+        }
 
         if (timer.state === states.RUNNING) {
           if (e.cancelable) e.preventDefault();
@@ -67,6 +76,7 @@
       }
 
       function onHostPointerDown(e) {
+        if (e.pointerType !== 'touch' || !TimerInput.supportsTouch(host) || shouldIgnore(e)) return;
         stoppedPointerId = timer.state === states.RUNNING ? e.pointerId : null;
         if (timer.state === states.RUNNING) {
           if (e.cancelable) e.preventDefault();

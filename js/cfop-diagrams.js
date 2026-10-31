@@ -241,11 +241,6 @@
           <div class="cfop-moves">${readableAlgorithm(item.alg)}</div>
         </div>
       </div>
-      <details class="cfop-detail"><summary>Phóng lớn &amp; xem đủ 6 mặt</summary>
-        <p>Cầm cube đúng màu tâm như hình (Vàng trên, Trắng đáy, Xanh lá trước, Đỏ phải). Hình là trạng thái trước khi thực hiện công thức.${category === 'oll' ? ' Ô xám không phải màu vàng; các vạch vàng bên ngoài là sticker vàng ở cạnh bên. Công thức chính đã đối chiếu tài liệu Wang Yiheng; mũi tên regrip trong PDF là hướng dẫn đổi cách cầm, không phải bước xoay.' : ''}</p>${cubeNet(item.alg, item.name)}
-        <p><strong>Ký hiệu:</strong> U/D = trên/dưới, F/B = trước/sau, R/L = phải/trái. Dấu ' = xoay ngược chiều kim đồng hồ khi nhìn thẳng mặt đó; 2 = xoay 180°. x/y/z = xoay cả cube theo R/U/F; M = lớp giữa theo L; chữ thường = xoay hai lớp. Ngoặc chỉ nhóm động tác finger-trick.</p>
-        <div class="cfop-moves cfop-large-alg">${readableAlgorithm(item.alg)}</div>
-      </details>
     </article>`;
 
     cardCache.set(cacheKey, result);
