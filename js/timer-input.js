@@ -7,6 +7,7 @@
 
       let isTouching = false;
       let activePointerId = null;
+      let stoppedPointerId = null;
 
       function shouldIgnore(e) {
         if (isBlocked && isBlocked()) return true;
@@ -17,6 +18,7 @@
       }
 
       function onPointerDown(e) {
+        if (stoppedPointerId === e.pointerId) return;
         if (timer.state === states.RUNNING) {
           if (e.cancelable) e.preventDefault();
           timer.stop();
@@ -31,13 +33,14 @@
         isTouching = true;
 
         if (e.cancelable) e.preventDefault();
-        if (timer.state === states.STOPPED) {
-          timer.handleHoldEnd();
-        }
         timer.handleHoldStart();
       }
 
       function onPointerUp(e) {
+        if (stoppedPointerId === e.pointerId) {
+          stoppedPointerId = null;
+          return;
+        }
         if (activePointerId !== null && e.pointerId !== activePointerId) return;
         activePointerId = null;
 
@@ -55,6 +58,7 @@
       }
 
       function onPointerCancel(e) {
+        if (stoppedPointerId === e.pointerId) stoppedPointerId = null;
         if (activePointerId !== null && e.pointerId !== activePointerId) return;
         activePointerId = null;
         if (!isTouching) return;
@@ -63,6 +67,7 @@
       }
 
       function onHostPointerDown(e) {
+        stoppedPointerId = timer.state === states.RUNNING ? e.pointerId : null;
         if (timer.state === states.RUNNING) {
           if (e.cancelable) e.preventDefault();
           timer.stop();

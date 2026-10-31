@@ -21,6 +21,8 @@
   - Bấm giờ bằng phím **Space** hoặc **chạm/giữ cảm ứng** trên điện thoại / máy tính bảng.
   - **Hold Delay 0.3s**: Đổi màu trực quan (Đỏ: đang giữ -> Xanh lá: sẵn sàng -> Nhả ra để đếm).
   - Tự động khóa phím Space / Timer khi người dùng đang ở tab tra cứu CFOP để tránh nhảy giờ ngoài ý muốn.
+  - Đóng cài đặt sẽ trả focus về Timer; giữ Space một lần để chuẩn bị lượt tiếp theo, không cần nhấn thêm lần nữa.
+  - Trang Timer vừa khung màn hình, không cuộn; khi đếm chỉ hiện đồng hồ ở chính giữa. Thư viện CFOP vẫn cuộn riêng.
   - **WCA Inspection 15s**: Đếm ngược 15 giây, tích hợp cảnh báo âm thanh bíp Web Audio API ở giây thứ 8 và 12, tự động phạt +2 sau 15s và DNF sau 17s.
 - **Thống Kê & Lịch Sử**:
   - Tính toán Best Single, Current, mo3, ao5, ao12, ao50, Session Mean theo chuẩn WCA.
@@ -36,7 +38,8 @@
   - 41 công thức riêng biệt, chuẩn hóa finger-trick, không trùng lặp.
   - Minh họa trực quan góc nhìn 3D Isometric chuẩn (Yellow U, White D, Green F, Red R) và sơ đồ 2D Net Cube.
 - **OLL (57 Cases)**:
-  - Giữ nguyên toàn bộ 57 công thức chuẩn hóa đã import thủ công kèm hình ảnh 2D top-down SVG.
+  - Đã sửa lỗi nhập liệu và đối chiếu 57 công thức chính cùng từng ô vàng với tài liệu OLL Wang Yiheng.
+  - Hình SVG được sinh từ công thức, có hướng mặt trước và hình trải 6 mặt; kiểm thử giữ nguyên F2L và phân biệt đủ 57 case.
 - **PLL (21 Cases)**:
   - 21 trường hợp chuẩn WCA (Ua, Ub, Z, H, Aa, Ab, E, F, Ga, Gb, Gc, Gd, Ja, Jb, Ra, Rb, T, V, Y, Na, Nb).
   - Đóng ngoặc cụm động tác (...), làm nổi bật góc xoay cube (x, y), bổ sung đặc điểm nhận diện (recognition cues).
@@ -67,10 +70,11 @@ Truy cập http://127.0.0.1:8000 hoặc http://localhost:3000.
 `ash
 npm test
 `
-Chạy toàn bộ 3 test suites:
-1. 	est/test-all.js: Kiểm tra Scramble, White Cross Solver và WCA Stats.
-2. 	est/test-cfop-diagrams.js: Kiểm tra tính toán hình học 3D, đảo thuật toán và trạng thái Rubik của 41 F2L & 21 PLL.
-3. 	est/test-timer-input.js: Kiểm tra bộ điều khiển bàn phím, touch hold delay 300ms và khóa timer ở tab CFOP.
+Chạy toàn bộ 4 test suites:
+1. `test/test-all.js`: Kiểm tra Scramble, White Cross Solver và WCA Stats.
+2. `test/test-cfop-diagrams.js`: Kiểm tra hình học Rubik, 41 F2L, 21 PLL và 57 OLL đối chiếu PDF.
+3. `test/test-timer-input.js`: Kiểm tra chạm giữ và tách lần chạm dừng khỏi lượt tiếp theo.
+4. `test/test-timer-state.js`: Kiểm tra Space sau khi đóng cài đặt, giữ một lần cho lượt mới, chống lặp phím và inspection.
 
 ---
 

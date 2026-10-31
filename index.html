@@ -141,16 +141,6 @@
       transition: opacity 0.12s ease, visibility 0.12s ease;
     }
 
-    body.is-solving #timer-trigger-area {
-      min-height: 85vh;
-      justify-content: center;
-    }
-
-    body.is-solving #timer-display {
-      transform: scale(1.12);
-      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
     
     /* csTimer Floating Window Styling (Image 2 Match) */
     #cstimer-tool-window {
@@ -300,7 +290,7 @@
     <!-- ========================================================
          MAIN TIMER SECTION (SPACEBAR ONLY - ZEN FOCUS MODE)
          ======================================================== -->
-    <section id="timer-trigger-area" class="w-full flex-1 flex flex-col items-center justify-center my-4 py-6 select-none transition-all duration-200">
+    <section id="timer-trigger-area" tabindex="-1" aria-label="Bấm giờ bằng Space hoặc chạm giữ" class="w-full flex-1 flex flex-col items-center justify-center my-4 py-6 select-none transition-all duration-200">
       
       <!-- Status Pill -->
       <div id="timer-status-pill" class="mb-4 px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all duration-200 text-slate-400 bg-slate-900/60 border border-slate-800">
@@ -797,17 +787,7 @@
     const SUFFIXES = ['', "'", '2'];
 
     function invertAlgorithm(alg) {
-      if (!alg) return '';
-      const moves = alg.trim().split(/\s+/).filter(Boolean);
-      const inverted = [];
-      for (let i = moves.length - 1; i >= 0; i--) {
-        let m = moves[i].replace(/[()]/g, '');
-        if (!m) continue;
-        if (m.endsWith('2')) inverted.push(m);
-        else if (m.endsWith("'")) inverted.push(m.slice(0, -1));
-        else inverted.push(m + "'");
-      }
-      return inverted.join(' ');
+      return alg ? CFOPDiagrams.inverse(alg) : '';
     }
 
     function generate2x2(length = null) {
@@ -899,47 +879,47 @@
 
     // ALL 57 OLL CASES (WANG YIHENG STANDARDS)
     const OLL_CASES = [
-      { id: '1',  group: 'Dot', name: 'OLL 1', alg: "R U2' R2' F R U2' R' F R F'" },
+      { id: '1',  group: 'Dot', name: 'OLL 1', alg: "R U2' R2' F R F' U2 (R' F R F')" },
       { id: '2',  group: 'Dot', name: 'OLL 2', alg: "F (R U R' U') S (R U R' U') f'" },
-      { id: '3',  group: 'Dot', name: 'OLL 3', alg: "f (R U R' U') U' F (R U R' U')" },
-      { id: '4',  group: 'Dot', name: 'OLL 4', alg: "f (R U R' U') F (R U R' U')" },
+      { id: '3',  group: 'Dot', name: 'OLL 3', alg: "f (R U R' U') f' U' F (R U R' U') F'" },
+      { id: '4',  group: 'Dot', name: 'OLL 4', alg: "f (R U R' U') f' U F (R U R' U') F'" },
       { id: '5',  group: 'Square', name: 'OLL 5', alg: "r' U2' R U R' U r" },
       { id: '6',  group: 'Square', name: 'OLL 6', alg: "r U2' R' U' R U' r'" },
       { id: '7',  group: 'Lightning', name: 'OLL 7', alg: "r U R' U R U2' r'" },
-      { id: '8',  group: 'Lightning', name: 'OLL 8', alg: "l' U' L U' L' U2' l" },
+      { id: '8',  group: 'Lightning', name: 'OLL 8', alg: "l' U' L U' L' U2 l" },
       { id: '9',  group: 'Fish', name: 'OLL 9', alg: "(R U R' U') R' F R2 U R' U' F'" },
-      { id: '10', group: 'Fish', name: 'OLL 10', alg: "R U R' U R' F R F' R U2' R'" },
-      { id: '11', group: 'Lightning', name: 'OLL 11', alg: "r' R2 R' R U2' R' U M'" },
+      { id: '10', group: 'Fish', name: 'OLL 10', alg: "R U R' U (R' F R F') R U2' R'" },
+      { id: '11', group: 'Lightning', name: 'OLL 11', alg: "r' R2 U R' U R U2' R' U M'" },
       { id: '12', group: 'Lightning', name: 'OLL 12', alg: "r R2' U' R U' R' U2 R U' r' R" },
-      { id: '13', group: 'Knight', name: 'OLL 13', alg: "L F' L' U' L U L' U' L F L'" },
+      { id: '13', group: 'Knight', name: 'OLL 13', alg: "L F' L' U' L F L' F' U F" },
       { id: '14', group: 'Knight', name: 'OLL 14', alg: "R' F R U R' F' R F U' F'" },
-      { id: '15', group: 'Knight', name: 'OLL 15', alg: "l' U' l L' U' L U l' U l" },
-      { id: '16', group: 'Knight', name: 'OLL 16', alg: "r U r' R U R' U' r U' r'" },
+      { id: '15', group: 'Knight', name: 'OLL 15', alg: "r' U' r R' U' R U r' U r" },
+      { id: '16', group: 'Knight', name: 'OLL 16', alg: "r U r' (R U R' U') r U' r'" },
       { id: '17', group: 'Dot', name: 'OLL 17', alg: "R U R' U (R' F R F') U2 (R' F R F')" },
       { id: '18', group: 'Dot', name: 'OLL 18', alg: "r U R' U R U2' r2' U' R U' R' U2' r" },
-      { id: '19', group: 'Dot', name: 'OLL 19', alg: "M U R U R' U' M' R' F R F'" },
+      { id: '19', group: 'Dot', name: 'OLL 19', alg: "r' R U (R U R' U') r R2' F R F'" },
       { id: '20', group: 'Dot', name: 'OLL 20', alg: "(r U R' U') M2' U R U' R' U' M'" },
       { id: '21', group: 'EO', name: 'OLL 21 (H)', alg: "R U2' R' U' (R U R' U') R U' R'" },
       { id: '22', group: 'EO', name: 'OLL 22 (Pi)', alg: "R U2' R2' U' R2 U' R2' U2' R" },
       { id: '23', group: 'EO', name: 'OLL 23 (Headlights)', alg: "R2 D R' U2 R D' R' U2 R'" },
       { id: '24', group: 'EO', name: 'OLL 24 (Chameleon)', alg: "(r U R' U') (r' F R F')" },
       { id: '25', group: 'EO', name: 'OLL 25 (Bowtie)', alg: "F' (r U R' U') r' F R" },
-      { id: '26', group: 'EO', name: 'OLL 26 (Anti-Sune)', alg: "R' U' R U' R' U2' R" },
+      { id: '26', group: 'EO', name: 'OLL 26 (Anti-Sune)', alg: "L' U' L U' L' U2 L" },
       { id: '27', group: 'EO', name: 'OLL 27 (Sune)', alg: "R U R' U R U2' R'" },
       { id: '28', group: 'CO', name: 'OLL 28', alg: "(r U R' U') r' R U R U' R'" },
       { id: '29', group: 'Awkward', name: 'OLL 29', alg: "(R U R' U') R U' R' F' U' F R U R'" },
-      { id: '30', group: 'Awkward', name: 'OLL 30', alg: "F R' F R2 U' R' U' R U2' R'" },
+      { id: '30', group: 'Awkward', name: 'OLL 30', alg: "F U R U2 R' U' R U2 R' U' F'" },
       { id: '31', group: 'P', name: 'OLL 31', alg: "R' U' F U R U' R' F' R" },
       { id: '32', group: 'P', name: 'OLL 32', alg: "S (R U R' U') R' F R f'" },
       { id: '33', group: 'T', name: 'OLL 33', alg: "(R U R' U') (R' F R F')" },
-      { id: '34', group: 'C', name: 'OLL 34', alg: "(R U R' U') (R' F R F') R' U2' R U R' R" },
+      { id: '34', group: 'C', name: 'OLL 34', alg: "(R U R' U') (R' F R F') R' U2' R U R' U R" },
       { id: '35', group: 'Fish', name: 'OLL 35', alg: "R U2' R2' F R F' R U2' R'" },
       { id: '36', group: 'W', name: 'OLL 36', alg: "L' U' L U' L' U L U (L F' L' F)" },
-      { id: '37', group: 'Fish', name: 'OLL 37', alg: "F R' F' R U R U' R'" },
-      { id: '38', group: 'W', name: 'OLL 38', alg: "R U R' U R U' R' (R' F R F')" },
+      { id: '37', group: 'Fish', name: 'OLL 37', alg: "(F R' F' R) (U R U' R')" },
+      { id: '38', group: 'W', name: 'OLL 38', alg: "R U R' U R U' R' U' (R' F R F')" },
       { id: '39', group: 'Lightning', name: 'OLL 39', alg: "L F' L' U' L U F U' L'" },
       { id: '40', group: 'Lightning', name: 'OLL 40', alg: "R' F (R U R' U') F' U R" },
-      { id: '41', group: 'Awkward', name: 'OLL 41', alg: "R U R' U' R U2' R' F (R U R' U') F'" },
+      { id: '41', group: 'Awkward', name: 'OLL 41', alg: "R U R' U R U2' R' F (R U R' U') F'" },
       { id: '42', group: 'Awkward', name: 'OLL 42', alg: "R' U' R U' R' U2' R F (R U R' U') F'" },
       { id: '43', group: 'P', name: 'OLL 43', alg: "R' U' F' U F R" },
       { id: '44', group: 'P', name: 'OLL 44', alg: "f (R U R' U') f'" },
@@ -950,11 +930,11 @@
       { id: '49', group: 'L', name: 'OLL 49', alg: "R B' R2' F R2 B R2' F' R" },
       { id: '50', group: 'L', name: 'OLL 50', alg: "r' U r2 U' r2' U' r2 U r'" },
       { id: '51', group: 'Line', name: 'OLL 51', alg: "f (R U R' U')(R U R' U') f'" },
-      { id: '52', group: 'Line', name: 'OLL 52', alg: "R' U' F' U' F U R U' R' R" },
-      { id: '53', group: 'L', name: 'OLL 53', alg: "r' U2' (R U R' U') R U R' r" },
-      { id: '54', group: 'L', name: 'OLL 54', alg: "r U2' R' U' (R U R' U') R r'" },
-      { id: '55', group: 'Line', name: 'OLL 55', alg: "r U2' R' U' r' R2 R' U' r r'" },
-      { id: '56', group: 'Line', name: 'OLL 56', alg: "r U r' R U' R' U R U' R' r U' r'" },
+      { id: '52', group: 'Line', name: 'OLL 52', alg: "R' F' U' F U' R U R' U R" },
+      { id: '53', group: 'L', name: 'OLL 53', alg: "r' U2' (R U R' U') R U R' U r" },
+      { id: '54', group: 'L', name: 'OLL 54', alg: "r U2' R' U' (R U R' U') R U' r'" },
+      { id: '55', group: 'Line', name: 'OLL 55', alg: "r U2' R' U' r' R2 U R' U' r U' r'" },
+      { id: '56', group: 'Line', name: 'OLL 56', alg: "r U r' U R U' R' U R U' R' r U' r'" },
       { id: '57', group: 'CO', name: 'OLL 57', alg: "(R U R' U') M' U R U' r'" }
     ];
 
@@ -1010,21 +990,6 @@
       };
     }
 
-    function generateOLLScramble(mode = 'oll_57') {
-      const pool = (mode === 'oll_2look') ? OLL_2LOOK_CASES : OLL_CASES;
-      const targetCase = pickRandom(pool);
-      const auf = ['', 'U', "U'", 'U2'];
-      const pre = pickRandom(auf);
-      const post = pickRandom(auf);
-      const inv = invertAlgorithm(targetCase.alg);
-      return {
-        scramble: [pre, inv, post].filter(Boolean).join(' '),
-        caseId: targetCase.id,
-        caseName: targetCase.name,
-        group: targetCase.group,
-        alg: targetCase.alg
-      };
-    }
 
     function generateScramble(type = '333', options = {}) {
       switch (type) {
@@ -1188,130 +1153,6 @@
     // ==========================================
     // CUBE DIAGRAM SVG GENERATORS (OLL, PLL, F2L)
     // ==========================================
-    const OLL_DIAGRAM_DATA = {
-      1:  { e: [0,0,0,0], c: ['B','B','F','F'] },
-      2:  { e: [0,0,0,0], c: ['L','R','R','L'] },
-      3:  { e: [0,0,0,0], c: ['L','B','R','F'] },
-      4:  { e: [0,0,0,0], c: ['B','R','F','L'] },
-      5:  { e: [0,1,1,0], c: ['L','R','top','F'] },
-      6:  { e: [0,0,1,1], c: ['L','R','F','top'] },
-      7:  { e: [1,1,0,0], c: ['L','top','F','L'] },
-      8:  { e: [1,0,0,1], c: ['top','R','R','F'] },
-      9:  { e: [1,1,0,0], c: ['B','R','top','L'] },
-      10: { e: [1,0,0,1], c: ['L','B','R','top'] },
-      11: { e: [1,0,1,0], c: ['top','B','R','F'] },
-      12: { e: [1,0,1,0], c: ['B','top','F','L'] },
-      13: { e: [0,1,1,0], c: ['top','B','R','L'] },
-      14: { e: [0,0,1,1], c: ['B','top','R','L'] },
-      15: { e: [1,0,0,1], c: ['L','R','top','F'] },
-      16: { e: [1,1,0,0], c: ['L','R','F','top'] },
-      17: { e: [0,0,0,0], c: ['top','R','top','L'] },
-      18: { e: [0,0,0,0], c: ['top','top','F','F'] },
-      19: { e: [0,0,0,0], c: ['top','R','R','top'] },
-      20: { e: [0,0,0,0], c: ['top','top','top','top'] },
-      21: { e: [1,1,1,1], c: ['L','R','R','L'] },
-      22: { e: [1,1,1,1], c: ['L','B','F','L'] },
-      23: { e: [1,1,1,1], c: ['top','top','F','F'] },
-      24: { e: [1,1,1,1], c: ['top','top','R','L'] },
-      25: { e: [1,1,1,1], c: ['top','B','top','F'] },
-      26: { e: [1,1,1,1], c: ['L','top','R','F'] },
-      27: { e: [1,1,1,1], c: ['B','R','F','top'] },
-      28: { e: [0,0,0,0], c: ['top','top','top','top'] },
-      29: { e: [0,1,1,0], c: ['B','top','R','top'] },
-      30: { e: [0,0,1,1], c: ['top','B','top','L'] },
-      31: { e: [1,0,1,1], c: ['top','B','F','top'] },
-      32: { e: [1,1,1,0], c: ['B','top','top','F'] },
-      33: { e: [0,1,0,1], c: ['B','B','top','top'] },
-      34: { e: [0,1,0,1], c: ['top','top','R','L'] },
-      35: { e: [1,1,0,0], c: ['top','R','top','F'] },
-      36: { e: [1,0,0,1], c: ['top','R','L','top'] },
-      37: { e: [1,0,0,1], c: ['L','top','F','top'] },
-      38: { e: [1,1,0,0], c: ['L','top','top','R'] },
-      39: { e: [1,0,0,1], c: ['B','top','F','top'] },
-      40: { e: [1,1,0,0], c: ['top','B','top','F'] },
-      41: { e: [1,1,0,0], c: ['top','B','F','top'] },
-      42: { e: [1,0,0,1], c: ['B','top','top','F'] },
-      43: { e: [1,0,1,1], c: ['top','top','R','F'] },
-      44: { e: [1,1,1,0], c: ['top','top','F','L'] },
-      45: { e: [0,1,0,1], c: ['top','R','R','top'] },
-      46: { e: [0,1,0,1], c: ['top','top','F','F'] },
-      47: { e: [1,0,0,1], c: ['L','B','R','F'] },
-      48: { e: [1,1,0,0], c: ['B','R','F','L'] },
-      49: { e: [1,1,0,0], c: ['L','B','R','F'] },
-      50: { e: [1,0,0,1], c: ['B','R','F','L'] },
-      51: { e: [0,1,0,1], c: ['B','B','F','F'] },
-      52: { e: [0,1,0,1], c: ['L','R','R','L'] },
-      53: { e: [1,0,0,1], c: ['B','R','top','F'] },
-      54: { e: [1,1,0,0], c: ['L','B','F','top'] },
-      55: { e: [0,1,0,1], c: ['L','B','R','F'] },
-      56: { e: [0,1,0,1], c: ['top','B','F','top'] },
-      57: { e: [1,0,1,0], c: ['top','top','top','top'] }
-    };
-
-    function generateOllSvg(id) {
-      const num = parseInt(id, 10);
-      const d = OLL_DIAGRAM_DATA[num] || { e: [1,1,1,1], c: ['top','top','top','top'] };
-      const edges = d.e;
-      const corners = d.c;
-      const size = 88;
-      const pad = 14;
-      const cell = 17;
-      const gap = 4;
-      const grid = 3 * cell + 2 * gap; // 59
-
-      const cMap = {
-        BL: corners[0] === 'top',
-        B: edges[0] === 1,
-        BR: corners[1] === 'top',
-        L: edges[3] === 1,
-        C: true,
-        R: edges[1] === 1,
-        FL: corners[3] === 'top',
-        F: edges[2] === 1,
-        FR: corners[2] === 'top'
-      };
-
-      const coords = [
-        ['BL', 0, 0], ['B', 1, 0], ['BR', 2, 0],
-        ['L', 0, 1], ['C', 1, 1], ['R', 2, 1],
-        ['FL', 0, 2], ['F', 1, 2], ['FR', 2, 2]
-      ];
-
-      let cells = '';
-      coords.forEach(([k, col, row]) => {
-        const x = pad + col * (cell + gap);
-        const y = pad + row * (cell + gap);
-        const fill = cMap[k] ? '#FACC15' : '#1E293B';
-        const stroke = cMap[k] ? '#EAB308' : '#334155';
-        cells += `<rect x="${x}" y="${y}" width="${cell}" height="${cell}" rx="3" fill="${fill}" stroke="${stroke}" stroke-width="1" />`;
-      });
-
-      let bars = '';
-      const bt = 4;
-      const bp = 3;
-
-      // Top bars (Back)
-      if (corners[0] === 'B') bars += `<rect x="${pad}" y="${pad - bt - bp}" width="${cell}" height="${bt}" rx="1.5" fill="#FACC15" />`;
-      if (edges[0] === 0) bars += `<rect x="${pad + cell + gap}" y="${pad - bt - bp}" width="${cell}" height="${bt}" rx="1.5" fill="#FACC15" />`;
-      if (corners[1] === 'B') bars += `<rect x="${pad + 2*(cell + gap)}" y="${pad - bt - bp}" width="${cell}" height="${bt}" rx="1.5" fill="#FACC15" />`;
-
-      // Bottom bars (Front)
-      if (corners[3] === 'F') bars += `<rect x="${pad}" y="${pad + grid + bp}" width="${cell}" height="${bt}" rx="1.5" fill="#FACC15" />`;
-      if (edges[2] === 0) bars += `<rect x="${pad + cell + gap}" y="${pad + grid + bp}" width="${cell}" height="${bt}" rx="1.5" fill="#FACC15" />`;
-      if (corners[2] === 'F') bars += `<rect x="${pad + 2*(cell + gap)}" y="${pad + grid + bp}" width="${cell}" height="${bt}" rx="1.5" fill="#FACC15" />`;
-
-      // Left bars
-      if (corners[0] === 'L') bars += `<rect x="${pad - bt - bp}" y="${pad}" width="${bt}" height="${cell}" rx="1.5" fill="#FACC15" />`;
-      if (edges[3] === 0) bars += `<rect x="${pad - bt - bp}" y="${pad + cell + gap}" width="${bt}" height="${cell}" rx="1.5" fill="#FACC15" />`;
-      if (corners[3] === 'L') bars += `<rect x="${pad - bt - bp}" y="${pad + 2*(cell + gap)}" width="${bt}" height="${cell}" rx="1.5" fill="#FACC15" />`;
-
-      // Right bars
-      if (corners[1] === 'R') bars += `<rect x="${pad + grid + bp}" y="${pad}" width="${bt}" height="${cell}" rx="1.5" fill="#FACC15" />`;
-      if (edges[1] === 0) bars += `<rect x="${pad + grid + bp}" y="${pad + cell + gap}" width="${bt}" height="${cell}" rx="1.5" fill="#FACC15" />`;
-      if (corners[2] === 'R') bars += `<rect x="${pad + grid + bp}" y="${pad + 2*(cell + gap)}" width="${bt}" height="${cell}" rx="1.5" fill="#FACC15" />`;
-
-      return `<svg viewBox="0 0 ${size} ${size}" class="w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0" xmlns="http://www.w3.org/2000/svg"><rect width="${size}" height="${size}" rx="10" fill="#090D16" stroke="#1E293B" stroke-width="1.5" />${cells}${bars}</svg>`;
-    }
 
 
     // 4. STORAGE & LEARNED MANAGER
@@ -1631,9 +1472,7 @@
           this.stop();
           return;
         }
-        if (this.state === TIMER_STATES.STOPPED) return;
-
-        if (this.state === TIMER_STATES.IDLE || this.state === TIMER_STATES.INSPECTING) {
+        if (this.state === TIMER_STATES.IDLE || this.state === TIMER_STATES.STOPPED || this.state === TIMER_STATES.INSPECTING) {
           this.setState(TIMER_STATES.HOLDING);
           clearTimeout(this.holdTimeout);
           this.holdTimeout = setTimeout(() => {
@@ -1648,7 +1487,6 @@
       handleHoldEnd() {
         clearTimeout(this.holdTimeout);
         if (this.state === TIMER_STATES.STOPPED) {
-          this.setState(TIMER_STATES.IDLE);
           return;
         }
         if (this.state === TIMER_STATES.HOLDING) {
@@ -1877,6 +1715,7 @@
 
         onStateChange: (state) => {
           elTimerDisplay.classList.remove('text-rose-500', 'text-emerald-400', 'text-amber-400', 'text-white', 'timer-glow-holding', 'timer-glow-ready', 'timer-glow-inspecting', 'animate-ready-pulse');
+          elTimerStatus.hidden = state === TIMER_STATES.STOPPED || state === TIMER_STATES.RUNNING;
 
           // ZEN / FOCUS MODE: Khi RUNNING thì ẩn tất cả giao diện khác!
           if (state === TIMER_STATES.RUNNING) {
@@ -1913,8 +1752,7 @@
               break;
             case TIMER_STATES.STOPPED:
               elTimerDisplay.classList.add('text-white');
-              elTimerStatus.textContent = 'LƯỢT GIẢI HOÀN TẤT!';
-              elTimerStatus.className = 'mb-4 px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all duration-200 text-emerald-400 bg-emerald-500/10 border border-emerald-500/20';
+              elTimerStatus.textContent = '';
               break;
           }
         },
@@ -2147,6 +1985,11 @@
       window.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') { closeAllModals(); return; }
         if (isTimerInputBlocked()) return;
+        if (e.target.closest?.('input, select, textarea, [contenteditable]:not([contenteditable="false"])')) return;
+        if (e.repeat) {
+          if (e.code === 'Space') e.preventDefault();
+          return;
+        }
 
         if (timer.state === TIMER_STATES.RUNNING) {
           e.preventDefault();
@@ -2154,7 +1997,7 @@
           return;
         }
 
-        if (e.target.closest?.('button, a, input, select, textarea, summary, [contenteditable]')) return;
+        if (e.code !== 'Space' && e.target.closest?.('button, a, summary')) return;
 
         if (e.code === 'Space') {
           e.preventDefault();
@@ -2185,7 +2028,8 @@
         if (e.code === 'Space' && isSpacePressed) {
           e.preventDefault();
           isSpacePressed = false;
-          timer.handleHoldEnd();
+          if (isTimerInputBlocked()) timer.cancelHold();
+          else timer.handleHoldEnd();
         }
       });
 
@@ -2389,7 +2233,7 @@
       });
 
       function renderMyAlgsView() {
-        elMyAlgsCardList.classList.toggle('cfop-readable', currentAlgsCat !== 'oll');
+        elMyAlgsCardList.classList.add('cfop-readable');
         elAlgsCatBtns.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.cat === currentAlgsCat)));
         elAlgsFilterBtns.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.filter === currentAlgsFilter)));
         let items = [];
@@ -2435,7 +2279,7 @@
           return true;
         });
 
-        document.getElementById('algs-results-summary').textContent = `${filtered.length} / ${items.length} case · ${currentAlgsCat === 'oll' ? 'OLL Wang Yiheng · giữ nguyên bản nhập' : 'Mở chi tiết để xem hướng cầm và ký hiệu'}`;
+        document.getElementById('algs-results-summary').textContent = `${filtered.length} / ${items.length} case · ${currentAlgsCat === 'oll' ? 'OLL Wang Yiheng · đã đối chiếu PDF' : 'Mở chi tiết để xem hướng cầm và ký hiệu'}`;
         if (filtered.length === 0) {
           elMyAlgsCardList.innerHTML = `<div class="library-empty">Không có case phù hợp.<br>Thử từ khóa khác hoặc chọn bộ lọc “Tất cả”.</div>`;
           return;
@@ -2443,56 +2287,7 @@
 
         elMyAlgsCardList.innerHTML = filtered.map(it => {
           const isL = learnedList.includes(String(it.id));
-          if (currentAlgsCat !== 'oll') {
-            return CFOPDiagrams.renderCard(it, currentAlgsCat, isL);
-          }
-          const svgDiagram = generateOllSvg(it.id);
-
-          return `
-            <div class="p-3.5 sm:p-4 rounded-2xl border transition-all ${isL ? 'bg-emerald-950/20 border-emerald-500/40 shadow-lg shadow-emerald-950/20' : 'bg-slate-900 border-slate-800'} flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
-              
-              <!-- Left: Cube State Diagram (from PDF) -->
-              <div class="flex items-center gap-3 w-full sm:w-auto">
-                <div class="flex-shrink-0 bg-slate-950 p-1 rounded-xl border border-slate-800/80 flex items-center justify-center shadow-inner">
-                  ${svgDiagram}
-                </div>
-
-                <!-- Mobile view: Name and Group next to diagram -->
-                <div class="sm:hidden flex-1 min-w-0">
-                  <div class="flex items-center gap-1.5 flex-wrap">
-                    <span class="font-bold text-sm text-white">${it.name}</span>
-                    <span class="text-[10px] font-mono px-1.5 py-0.5 rounded ${isL ? 'bg-emerald-500/20 text-emerald-300 font-bold' : 'bg-slate-800 text-slate-400'}">${it.group || ''}</span>
-                  </div>
-                  ${it.desc ? `<div class="text-[11px] text-slate-400 truncate mt-0.5">${it.desc}</div>` : ''}
-                </div>
-              </div>
-
-              <!-- Center: Title & Algorithm Formula with Fingertricks -->
-              <div class="flex-1 min-w-0 w-full space-y-1.5">
-                <div class="hidden sm:flex items-center gap-2">
-                  <span class="font-bold text-sm text-white">${it.name}</span>
-                  <span class="text-[10px] font-mono px-2 py-0.5 rounded-full ${isL ? 'bg-emerald-500/20 text-emerald-300 font-bold' : 'bg-slate-800 text-slate-400 font-medium'}">${it.group || ''}</span>
-                  ${it.desc ? `<span class="text-xs text-slate-400 truncate">(${it.desc})</span>` : ''}
-                </div>
-
-                <div class="bg-slate-950 p-2.5 rounded-xl font-mono text-xs sm:text-[13px] text-amber-300 dark:text-cyan-300 font-bold select-all tracking-wide leading-relaxed border border-slate-900 flex items-center justify-between shadow-inner">
-                  <span class="break-words font-semibold">${it.alg}</span>
-                  <button class="btn-copy-card-alg text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 ml-2 flex-shrink-0" data-alg="${it.alg}" title="Sao chép công thức">
-                    <i data-lucide="copy" class="w-3.5 h-3.5 pointer-events-none"></i>
-                  </button>
-                </div>
-              </div>
-
-              <!-- Right: Manual 'Đã thuộc' Button (100% User Triggered) -->
-              <div class="flex-shrink-0 w-full sm:w-auto flex justify-end">
-                <button class="btn-toggle-learn w-full sm:w-auto flex items-center justify-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl transition-all ${isL ? 'bg-emerald-500 text-slate-950 font-extrabold shadow-md shadow-emerald-500/20 hover:bg-emerald-400' : 'bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700'}" data-cat="${currentAlgsCat}" data-id="${it.id}">
-                  <i data-lucide="${isL ? 'check-circle-2' : 'circle'}" class="w-4 h-4 pointer-events-none"></i>
-                  <span>${isL ? 'Đã thuộc' : 'Chưa học'}</span>
-                </button>
-              </div>
-
-            </div>
-          `;
+          return CFOPDiagrams.renderCard(it, currentAlgsCat, isL);
         }).join('');
 
         renderIcons();
@@ -2670,15 +2465,28 @@
       });
 
       elSettingsBtn.addEventListener('click', () => {
+        document.getElementById('timer-tools').open = false;
+        isSpacePressed = false;
+        timer.cancelHold();
         elSettingInspection.checked = storage.settings.inspection;
         elSettingAudio.checked = storage.settings.inspectionAudio;
         elSettingShowMs.checked = storage.settings.showMs;
         elSettingHoldDelay.value = storage.settings.holdDelayMs;
         elHoldDelayValue.textContent = `${(storage.settings.holdDelayMs / 1000).toFixed(1)}s`;
         elSettingsModal.classList.remove('hidden');
+        elCloseSettingsBtn.focus({ preventScroll: true });
       });
 
-      elCloseSettingsBtn.addEventListener('click', () => elSettingsModal.classList.add('hidden'));
+      function closeSettings() {
+        elSettingsModal.classList.add('hidden');
+        document.getElementById('timer-tools').open = false;
+        elTimerTrigger.focus({ preventScroll: true });
+      }
+
+      elCloseSettingsBtn.addEventListener('click', closeSettings);
+      elSettingsModal.addEventListener('click', event => {
+        if (event.target === elSettingsModal) closeSettings();
+      });
       elSettingHoldDelay.addEventListener('input', (e) => { elHoldDelayValue.textContent = `${(e.target.value / 1000).toFixed(1)}s`; });
 
       elSaveSettingsBtn.addEventListener('click', () => {
@@ -2691,7 +2499,7 @@
         storage.saveSettings(u);
         timer.updateSettings({ inspectionEnabled: u.inspection, inspectionAudio: u.inspectionAudio, showMs: u.showMs, holdDelayMs: u.holdDelayMs });
         refreshSessionUI();
-        elSettingsModal.classList.add('hidden');
+        closeSettings();
       });
 
       // Export / Import
@@ -2739,6 +2547,8 @@
       });
 
       function closeAllModals() {
+        isSpacePressed = false;
+        timer.cancelHold();
         elSettingsModal.classList.add('hidden');
         elExportModal.classList.add('hidden');
         elSolveModal.classList.add('hidden');
@@ -2747,6 +2557,7 @@
         if (elCsTimerTool) elCsTimerTool.classList.add("hidden");
         elDrawer.classList.add('translate-x-full');
         elDrawerBackdrop.classList.add('hidden');
+        if (elMyAlgsModal.classList.contains('hidden')) elTimerTrigger.focus({ preventScroll: true });
       }
 
       // Initial Boot

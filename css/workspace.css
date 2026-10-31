@@ -18,7 +18,9 @@ html, body {
   height: 100%;
 }
 body {
-  min-height: 100dvh;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
@@ -54,8 +56,22 @@ body[data-workspace="cfop"] {
 .timer-tools-menu button { width: 100%; display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 10px; color: var(--workspace-text); border-radius: 8px; font-size: 13px; text-align: left; }
 .timer-tools-menu svg { width: 17px; height: 17px; }
 .timer-tools-menu button:hover { background: var(--workspace-line); }
-#timer-page { min-height: calc(100dvh - 154px); }
-#timer-trigger-area { touch-action: none; -webkit-touch-callout: none; cursor: pointer; }
+#timer-toolbar { flex: 0 0 auto; }
+#timer-page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  justify-content: stretch;
+  justify-items: center;
+  min-height: 0;
+  gap: clamp(6px, 1.5dvh, 14px);
+  padding-block: clamp(6px, 1.5dvh, 16px);
+}
+#timer-trigger-area { min-height: 0; margin: 0; padding: 0; touch-action: none; -webkit-touch-callout: none; cursor: pointer; }
+#timer-trigger-area:focus { outline: none; }
+#timer-display { font-size: clamp(40px, min(13vw, 20dvh), 168px); line-height: 1; white-space: nowrap; }
+#timer-status-pill[hidden] { display: none !important; }
+#settings-modal > div { max-height: 100%; overflow-y: auto; }
 #timer-status-pill { max-width: 100%; text-align: center; font-size: 11px; letter-spacing: 0; text-transform: none; line-height: 1.7; }
 #case-solution-hint { gap: 8px; }
 #case-solution-hint > div { min-width: 0; white-space: normal; overflow: visible; text-align: left; }
@@ -157,13 +173,20 @@ body[data-workspace="cfop"] {
 #my-algs-card-list:not(.cfop-readable) .select-all { font-size: 15px; line-height: 1.9; }
 .library-empty { grid-column: 1 / -1; padding: 48px 16px; text-align: center; color: var(--workspace-muted); font-size: 14px; line-height: 1.8; }
 body.is-solving #timer-toolbar { visibility: hidden; pointer-events: none; }
-body.is-solving #timer-page { min-height: 0; }
+body.is-solving #timer-trigger-area {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: var(--workspace-bg);
+  transition: none;
+}
+body.is-solving #timer-trigger-area > :not(#timer-display) { display: none !important; }
+body.is-solving #timer-display { font-size: clamp(40px, min(16vw, 35dvh), 240px); transform: none; }
 :is(.workspace-tab, .app-brand, .timer-mode-switch button, .toolbar-button, .algs-cat-btn, .algs-filter-btn, .timer-tools-menu button):focus-visible { outline: 2px solid var(--workspace-accent); outline-offset: 3px; }
 
 @media (max-width: 1050px) {
   .timer-toolbar { flex-wrap: wrap; }
   .timer-mode-row { flex: 1; flex-wrap: wrap; }
-  #timer-page { min-height: calc(100dvh - 190px); }
 }
 @media (max-width: 767px) {
   .app-header-inner { min-height: 68px; padding: 8px 16px; gap: 10px; }
@@ -178,8 +201,7 @@ body.is-solving #timer-page { min-height: 0; }
   .timer-aux-row #session-btn { max-width: 145px; }
   #sub-case-container:not(.hidden) { width: 100%; }
   #sub-case-select { width: 100%; }
-  #timer-page { min-height: calc(100dvh - 200px); }
-  #timer-display { font-size: clamp(64px, 19vw, 120px); }
+  #timer-display { font-size: clamp(40px, min(16vw, 18dvh), 120px); }
   .library-page { padding: 0 16px; height: calc(100dvh - 69px); max-height: calc(100dvh - 69px); }
   .library-heading { padding-top: 16px; gap: 10px; }
   .library-heading h1 { font-size: 22px; }
@@ -208,4 +230,14 @@ body.is-solving #timer-page { min-height: 0; }
   .library-heading p { font-size: 11px; }
   .timer-aux-row #session-btn { max-width: 120px; padding-left: 8px; padding-right: 8px; gap: 5px; }
   .timer-aux-row #session-btn > svg:last-child { display: none; }
+}
+
+@media (max-height: 640px) {
+  #scramble-section { gap: 6px; }
+  #scramble-section > .glass-panel { padding: 8px 12px; }
+  #scramble-text { font-size: 13px; line-height: 1.4; }
+  #timer-status-pill { margin-bottom: 8px; padding-block: 4px; }
+  #solve-quick-actions { margin-top: 8px; }
+  #timer-page > footer { gap: 4px; }
+  #timer-page > footer > div { padding: 6px; }
 }

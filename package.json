@@ -4,7 +4,7 @@
   "description": "Modern Minimalist Speedcubing Timer & Cross Solver SPA",
   "scripts": {
     "start": "npx serve .",
-    "test": "node test/test-all.js && node test/test-cfop-diagrams.js && node test/test-timer-input.js"
+    "test": "node test/test-all.js && node test/test-cfop-diagrams.js && node test/test-timer-input.js && node test/test-timer-state.js"
   },
   "keywords": ["speedcubing", "cstimer", "rubik", "cross-solver", "timer"],
   "author": "Senior Frontend Developer",

@@ -142,6 +142,28 @@
     return result;
   }
 
+  function ollDiagram(algorithm, name) {
+    const cacheKey = 'oll_' + algorithm + '_' + name;
+    if (diagramCache.has(cacheKey)) return diagramCache.get(cacheKey);
+    const cube = standardCaseState(algorithm);
+    const fill = color => color === 'U' ? '#facc15' : 'var(--cfop-oll-off, #475569)';
+    let content = faceColors(cube, 'U').map((color, index) =>
+      `<rect x="${26 + index % 3 * 24}" y="${26 + Math.floor(index / 3) * 24}" width="22" height="22" rx="2" fill="${fill(color)}"/>`
+    ).join('');
+    const strips = [
+      ['B', [2, 1, 0], 26, 13, 24, 10], ['F', [0, 1, 2], 26, 101, 24, 10],
+      ['L', [0, 1, 2], 13, 26, 10, 24], ['R', [2, 1, 0], 101, 26, 10, 24]
+    ];
+    for (const [face, order, left, top, width, height] of strips) {
+      const palette = faceColors(cube, face);
+      content += order.map((index, offset) => `<rect x="${left + (width === 24 ? offset * 24 : 0)}" y="${top + (height === 24 ? offset * 24 : 0)}" width="${width - 2}" height="${height - 2}" rx="2" fill="${fill(palette[index])}"/>`).join('');
+    }
+    content += '<text x="62" y="123" text-anchor="middle" fill="currentColor" font-size="9">F · Mặt trước</text>';
+    const result = svg(content, `${name}: vị trí ô vàng trước khi giải, nhìn từ trên, mặt trước ở dưới`, '0 0 124 128', 'cfop-diagram');
+    diagramCache.set(cacheKey, result);
+    return result;
+  }
+
   function f2lDiagram(algorithm, name) {
     if (diagramCache.has('f2l_' + algorithm)) return diagramCache.get('f2l_' + algorithm);
     const cube = standardCaseState(algorithm);
@@ -193,12 +215,19 @@
       ['F', 'R', 'B', 'L'].every(face => faceColors(std, face).slice(3).every(color => color === faceColors(std, face)[4]));
   }
 
+  function isOllState(cube) {
+    const standard = reorientToStandard(cube);
+    return faceColors(standard, 'D').every(color => color === 'D') &&
+      ['F', 'R', 'B', 'L'].every(face => faceColors(standard, face).slice(3).every(color => color === face));
+  }
+
   function renderCard(item, category, learned, duplicates = []) {
     const cacheKey = category + "_" + item.id + "_" + item.alg + "_" + item.name + "_" + learned + "_" + duplicates.join(",");
     if (cardCache.has(cacheKey)) return cardCache.get(cacheKey);
 
-    const diagram = category === 'pll' ? pllDiagram(item.alg, item.name) : f2lDiagram(item.alg, item.name);
-    const warning = category === 'pll' && !isPllState(caseState(item.alg)) ? 'Cần kiểm tra công thức: trạng thái tạo ra chưa giữ nguyên mặt trên hoặc hai tầng dưới.' : '';
+    const diagram = category === 'oll' ? ollDiagram(item.alg, item.name) : category === 'pll' ? pllDiagram(item.alg, item.name) : f2lDiagram(item.alg, item.name);
+    const invalid = category === 'oll' ? !isOllState(caseState(item.alg)) : category === 'pll' && !isPllState(caseState(item.alg));
+    const warning = invalid ? 'Cần kiểm tra công thức: trạng thái tạo ra chưa giữ nguyên hai tầng dưới hoặc không đúng loại case.' : '';
     const result = `<article class="cfop-card${learned ? ' is-learned' : ''}" aria-label="${escapeHtml(item.name)}">
       <header class="cfop-card-heading"><h3>${escapeHtml(item.name)}</h3>
         <button class="btn-toggle-learn cfop-learn" data-cat="${category}" data-id="${escapeHtml(item.id)}" aria-pressed="${learned}"><i data-lucide="${learned ? 'check-circle-2' : 'circle'}"></i><span>${learned ? 'Đã thuộc' : 'Chưa học'}</span></button>
@@ -207,13 +236,13 @@
       ${item.desc ? `<p class="cfop-description">${escapeHtml(item.desc)}</p>` : ''}
       ${warning ? `<p class="cfop-warning">${warning}</p>` : ''}
       ${duplicates.length ? `<p class="cfop-warning">Cùng chuỗi động tác với ${duplicates.map(escapeHtml).join(', ')}. Cần đối chiếu lại tên case.</p>` : ''}
-      <div class="cfop-card-body"><figure>${diagram}<figcaption>${category === 'pll' ? 'Nhìn từ trên · F ở dưới, R ở phải' : 'U ở trên · F ở trước · R ở phải (Slot FR)'}</figcaption></figure>
+      <div class="cfop-card-body"><figure>${diagram}<figcaption>${category === 'oll' ? 'Ô vàng cần định hướng · F ở dưới, R ở phải' : category === 'pll' ? 'Nhìn từ trên · F ở dưới, R ở phải' : 'U ở trên · F ở trước · R ở phải (Slot FR)'}</figcaption></figure>
         <div class="cfop-formula"><div class="cfop-formula-label"><span>Công thức giải</span><button class="btn-copy-card-alg" data-alg="${escapeHtml(item.alg)}" title="Sao chép công thức" aria-label="Sao chép công thức ${escapeHtml(item.name)}"><i data-lucide="copy"></i></button></div>
           <div class="cfop-moves">${readableAlgorithm(item.alg)}</div>
         </div>
       </div>
       <details class="cfop-detail"><summary>Phóng lớn &amp; xem đủ 6 mặt</summary>
-        <p>Cầm cube đúng màu tâm như hình (Vàng trên, Trắng đáy, Xanh lá trước, Đỏ phải). Hình là trạng thái trước khi thực hiện công thức.</p>${cubeNet(item.alg, item.name)}
+        <p>Cầm cube đúng màu tâm như hình (Vàng trên, Trắng đáy, Xanh lá trước, Đỏ phải). Hình là trạng thái trước khi thực hiện công thức.${category === 'oll' ? ' Ô xám không phải màu vàng; các vạch vàng bên ngoài là sticker vàng ở cạnh bên. Công thức chính đã đối chiếu tài liệu Wang Yiheng; mũi tên regrip trong PDF là hướng dẫn đổi cách cầm, không phải bước xoay.' : ''}</p>${cubeNet(item.alg, item.name)}
         <p><strong>Ký hiệu:</strong> U/D = trên/dưới, F/B = trước/sau, R/L = phải/trái. Dấu ' = xoay ngược chiều kim đồng hồ khi nhìn thẳng mặt đó; 2 = xoay 180°. x/y/z = xoay cả cube theo R/U/F; M = lớp giữa theo L; chữ thường = xoay hai lớp. Ngoặc chỉ nhóm động tác finger-trick.</p>
         <div class="cfop-moves cfop-large-alg">${readableAlgorithm(item.alg)}</div>
       </details>
@@ -223,7 +252,7 @@
     return result;
   }
 
-  const api = { solvedCube, tokenize, inverse, applyAlgorithm, caseState, standardCaseState, faceColors, reorientToStandard, pllDiagram, f2lDiagram, cubeNet, readableAlgorithm, isPllState, renderCard };
+  const api = { solvedCube, tokenize, inverse, applyAlgorithm, caseState, standardCaseState, faceColors, reorientToStandard, pllDiagram, ollDiagram, f2lDiagram, cubeNet, readableAlgorithm, isPllState, isOllState, renderCard };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.CFOPDiagrams = api;
 })(typeof window !== 'undefined' ? window : globalThis);
