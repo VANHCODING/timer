@@ -1,14 +1,21 @@
 <!DOCTYPE html>
-<html lang="vi" class="dark">
+<html lang="vi" class="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
   <title>AeroTimer - Speedcubing Timer & CFOP Trainer</title>
+  <script>
+    try {
+      const appearance = JSON.parse(localStorage.getItem('speedcubing_timer_settings') || '{}');
+      document.documentElement.className = appearance.appearanceVersion === 2 && appearance.theme === 'dark' ? 'dark' : 'light';
+    } catch (error) {}
+  </script>
   
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -29,9 +36,9 @@
             }
           },
           fontFamily: {
-            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
-            mono: ['"JetBrains Mono"', 'monospace'],
-            digital: ['"JetBrains Mono"', '"Chakra Petch"', 'monospace']
+            sans: ['Manrope', 'sans-serif'],
+            mono: ['Manrope', 'sans-serif'],
+            digital: ['Manrope', 'sans-serif']
           }
         }
       }
@@ -41,14 +48,12 @@
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
   
-  <link rel="stylesheet" href="css/cfop-cards.css">
+  <link rel="stylesheet" href="css/cfop-cards.css?v=20261103-light">
   <link rel="stylesheet" href="css/workspace.css">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-
     :root {
-      --font-digital: 'JetBrains Mono', 'Chakra Petch', monospace;
-      --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-digital: 'Manrope', sans-serif;
+      --font-sans: 'Manrope', sans-serif;
       --bg-page: #0B0F17;
       --text-main: #F8FAFC;
     }
@@ -158,8 +163,9 @@
     html.light #timer-display.text-white { color: #0F172A !important; }
     html.light #timer-status-pill { background-color: #F1F5F9 !important; border-color: #E2E8F0 !important; color: #64748B !important; }
   </style>
+  <link rel="stylesheet" href="css/compact.css?v=20261103-light-2">
 </head>
-<body class="bg-[#0B0F17] text-slate-100 min-h-screen flex flex-col transition-colors duration-200 overflow-x-hidden selection:bg-cyan-500/30 selection:text-cyan-200">
+<body class="min-h-screen flex flex-col transition-colors duration-200 overflow-x-hidden">
 
   <!-- ========================================================
        TOP NAVIGATION BAR
@@ -171,8 +177,8 @@
         <button id="nav-timer" class="workspace-tab" aria-current="page" aria-controls="timer-page"><i data-lucide="timer"></i><span>Timer</span></button>
         <button id="btn-my-algs" class="workspace-tab" aria-controls="my-algs-modal"><i data-lucide="book-open"></i><span>Học CFOP</span><span id="learned-total-badge" class="learned-badge" aria-label="Tổng số case đã thuộc">0</span></button>
       </nav>
-      <button id="theme-btn" title="Chuyển Dark / Light mode" class="w-8 h-8 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-800 flex items-center justify-center text-slate-300 transition-colors">
-          <i data-lucide="sun" id="theme-icon" class="w-4 h-4"></i>
+      <button id="theme-btn" title="Chuyển sang nền tối" class="w-8 h-8 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-800 flex items-center justify-center text-slate-300 transition-colors">
+          <i data-lucide="moon" id="theme-icon" class="w-4 h-4"></i>
         </button>
     </div>
   </header>
@@ -190,7 +196,7 @@
     </div>
     <div class="timer-aux-row">
       <div class="relative">
-          <button id="session-btn" class="flex items-center gap-2 bg-slate-900/90 hover:bg-slate-800 border border-slate-800 rounded-xl px-2.5 sm:px-3 py-1.5 text-xs font-medium text-slate-200 transition-colors">
+          <button id="session-btn" class="toolbar-button">
             <i data-lucide="folder" class="w-3.5 h-3.5 text-cyan-400"></i>
             <span id="current-session-name" class="max-w-[65px] sm:max-w-[100px] truncate">Session 1</span>
             <span id="current-session-count" class="bg-cyan-500/20 text-cyan-300 text-[10px] font-bold px-1.5 py-0.5 rounded-md">0</span>
@@ -216,7 +222,7 @@
         </div>
       <button id="toggle-drawer-btn" class="toolbar-button" title="Lịch sử và thống kê"><i data-lucide="chart-no-axes-combined"></i><span>Lịch sử</span><span id="drawer-badge" class="toolbar-count">0</span></button>
       <details id="timer-tools" class="timer-tools">
-        <summary class="toolbar-button"><i data-lucide="sliders-horizontal"></i><span>Công cụ</span><i data-lucide="chevron-down"></i></summary>
+        <summary class="toolbar-button" aria-label="Công cụ Timer"><i data-lucide="sliders-horizontal"></i><span>Công cụ</span><i data-lucide="chevron-down"></i></summary>
         <div class="timer-tools-menu">
           <button id="toggle-cross-btn" aria-controls="cstimer-tool-window" aria-expanded="false"><i data-lucide="sparkles"></i><span>Gợi ý Cross + F2L</span></button>
           <button id="settings-btn"><i data-lucide="settings"></i><span>Cài đặt Timer</span></button>
@@ -372,22 +378,23 @@
   <section id="my-algs-modal" class="hidden library-page" role="main" aria-labelledby="library-title">
     <div class="library-shell">
       <div class="library-heading">
-        <div><h1 id="library-title" tabindex="-1">Công thức CFOP</h1><p>Chuyên biệt cho CFOP: F2L (41) · OLL (57) · PLL (21) chuẩn Speedcubing.</p></div>
+        <div><h1 id="library-title" tabindex="-1">Công thức CFOP</h1></div>
         <button id="close-my-algs-btn" class="toolbar-button"><i data-lucide="timer"></i><span>Về Timer</span></button>
       </div>
       <div class="library-toolbar">
         <div class="library-categories" role="group" aria-label="Bước CFOP">
-          <button data-cat="f2l" class="algs-cat-btn" aria-pressed="true"><strong>F2L</strong><span>41 case</span></button>
+          <button data-cat="f2l" class="algs-cat-btn" aria-pressed="true"><strong>F2L</strong><span>221</span></button>
           <button data-cat="oll" class="algs-cat-btn" aria-pressed="false"><strong>OLL</strong><span>57 case</span></button>
           <button data-cat="pll" class="algs-cat-btn" aria-pressed="false"><strong>PLL</strong><span>21 case</span></button>
         </div>
+        <label class="library-collection" id="f2l-collection-control"><span class="sr-only">Bộ công thức F2L</span><select id="f2l-collection"><option value="br">BR · 41 case</option><option value="advanced">Advanced · 4 slot</option><option value="useful">Useful · 16 case</option></select></label>
         <label class="library-search"><i data-lucide="search"></i><span class="sr-only">Tìm công thức</span><input type="search" id="algs-search-input" placeholder="Tìm case hoặc công thức…" autocomplete="off"></label>
       </div>
       <div class="library-overview">
+        <div id="algs-results-summary" class="library-result-count" role="status" aria-live="polite"></div>
         <div class="library-progress"><div><span id="algs-progress-label">Tiến độ F2L</span><span id="algs-progress-percent">0%</span></div><div class="library-progress-track"><div id="algs-progress-bar" style="width:0%"></div></div></div>
         <div class="library-filters" role="group" aria-label="Lọc theo tiến độ"><button data-filter="all" class="algs-filter-btn" aria-pressed="true">Tất cả</button><button data-filter="unlearned" class="algs-filter-btn" aria-pressed="false">Chưa học</button><button data-filter="learned" class="algs-filter-btn" aria-pressed="false">Đã thuộc</button></div>
       </div>
-      <div id="algs-results-summary" class="library-result-count" role="status" aria-live="polite"></div>
       <div id="my-algs-card-list" class="library-card-list" aria-label="Danh sách công thức"></div>
     </div>
   </section>
@@ -461,8 +468,8 @@
         </button>
       </div>
 
-      <div class="space-y-4 text-xs">
-        <label class="flex items-center justify-between p-3 rounded-xl bg-slate-900 border border-slate-800 cursor-pointer">
+      <div class="settings-options">
+        <label class="setting-row">
           <div>
             <div class="font-semibold text-white">WCA Inspection (15s)</div>
             <div class="text-slate-400 text-[11px]">Đếm ngược 15s trước khi bấm giờ</div>
@@ -470,7 +477,7 @@
           <input type="checkbox" id="setting-inspection" class="w-4 h-4 accent-cyan-500 rounded">
         </label>
 
-        <label class="flex items-center justify-between p-3 rounded-xl bg-slate-900 border border-slate-800 cursor-pointer">
+        <label class="setting-row">
           <div>
             <div class="font-semibold text-white">Âm thanh cảnh báo (8s & 12s)</div>
             <div class="text-slate-400 text-[11px]">Giọng nói hoặc tiếng bíp nhắc nhở inspection</div>
@@ -478,7 +485,7 @@
           <input type="checkbox" id="setting-audio" class="w-4 h-4 accent-cyan-500 rounded">
         </label>
 
-        <label class="flex items-center justify-between p-3 rounded-xl bg-slate-900 border border-slate-800 cursor-pointer">
+        <label class="setting-row">
           <div>
             <div class="font-semibold text-white">Hiển thị mili-giây (0.000)</div>
             <div class="text-slate-400 text-[11px]">Mặc định hiển thị centi-giây (0.00)</div>
@@ -486,7 +493,7 @@
           <input type="checkbox" id="setting-show-ms" class="w-4 h-4 accent-cyan-500 rounded">
         </label>
 
-        <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
+        <div class="setting-range">
           <div class="flex items-center justify-between">
             <span class="font-semibold text-white">Thời gian giữ phím (Hold Delay)</span>
             <span id="hold-delay-value" class="font-mono font-bold text-cyan-400">0.3s</span>
@@ -496,7 +503,7 @@
       </div>
 
       <div class="pt-2">
-        <button id="save-settings-btn" class="w-full py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs shadow-lg shadow-cyan-500/20 transition-all">
+        <button id="save-settings-btn" class="primary-action">
           Đã lưu & Đóng
         </button>
       </div>
@@ -515,7 +522,7 @@
         </button>
       </div>
 
-      <div class="space-y-3 text-xs">
+      <div class="export-options">
         <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
           <span class="font-semibold text-white">Xuất File CSV (Chuẩn csTimer)</span>
           <button id="btn-export-csv" class="w-full py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold flex items-center justify-center gap-2">
@@ -800,27 +807,27 @@
 
     // ALL 21 WCA PLL CASES
     const PLL_CASES = [
-      { id: 'Aa', group: 'Hoán vị 3 góc (Corners Only)', name: 'Aa-Perm', alg: "x (R' U R') D2 (R U' R') D2 R2 x'", desc: 'Đèn trước, đổi 3 góc ngược chiều kim đồng hồ' },
-      { id: 'Ab', group: 'Hoán vị 3 góc (Corners Only)', name: 'Ab-Perm', alg: "x R2 D2 (R U R') D2 (R U' R) x'", desc: 'Đèn phải, đổi 3 góc thuận chiều kim đồng hồ' },
-      { id: 'E',  group: 'Hoán vị 4 góc (Corners Only)', name: 'E-Perm',  alg: "x' (R U' R' D) (R U R' D') (R U R' D) (R U' R' D') x", desc: 'Không có đèn, đổi 2 cặp góc đối xứng' },
-      { id: 'F',  group: 'Đổi 2 góc & 2 cạnh (Adjacent)', name: 'F-Perm',  alg: "(R' U' F') (R U R' U') (R' F R2 U') (R' U' R U) (R' U R)", desc: 'Thanh 1x3 bên trái, đổi 2 góc & 2 cạnh' },
-      { id: 'Ga', group: 'Hoán vị G (G-Perms)', name: 'Ga-Perm', alg: "R2 U (R' U R' U') (R U' R2) D (U' R' U R) D'", desc: 'Đèn bên trái, khối 1x2 ở sau phải' },
-      { id: 'Gb', group: 'Hoán vị G (G-Perms)', name: 'Gb-Perm', alg: "(R' U' R) (U D') (R2 U R' U) (R U' R U') R2 D", desc: 'Đèn ở trước, khối 1x2 ở sau phải' },
-      { id: 'Gc', group: 'Hoán vị G (G-Perms)', name: 'Gc-Perm', alg: "R2 U' (R U' R U) (R' U R2) D' (U R U' R') D", desc: 'Đèn bên phải, khối 1x2 ở trước trái' },
-      { id: 'Gd', group: 'Hoán vị G (G-Perms)', name: 'Gd-Perm', alg: "(R U R' U') D (R2 U' R U') (R' U R' U) R2 D'", desc: 'Đèn ở sau, khối 1x2 ở trước trái' },
-      { id: 'H',  group: 'Hoán vị 4 cạnh (Edges Only)', name: 'H-Perm',  alg: "M2' U M2' U2 M2' U M2'", desc: 'Đổi chéo 4 cạnh đối diện nhau' },
-      { id: 'Ja', group: 'Đổi 2 góc & 2 cạnh (Adjacent)', name: 'Ja-Perm', alg: "(R' U L' U2) (R U' R') U2 (R L)", desc: 'Thanh 1x3 bên phải, đổi 2 góc & 2 cạnh trái' },
-      { id: 'Jb', group: 'Đổi 2 góc & 2 cạnh (Adjacent)', name: 'Jb-Perm', alg: "(R U R' F') (R U R' U') (R' F R2 U' R')", desc: 'Thanh 1x3 bên trái, đổi 2 góc & 2 cạnh phải' },
-      { id: 'Na', group: 'Đổi 2 góc & 2 cạnh (Diagonal)', name: 'Na-Perm', alg: "(R U R' U) (R U R' F') (R U R' U') (R' F R2 U') (R' U2 R U' R')", desc: '2 thanh 1x2 đối chéo, hoán vị góc và cạnh trái' },
-      { id: 'Nb', group: 'Đổi 2 góc & 2 cạnh (Diagonal)', name: 'Nb-Perm', alg: "(R' U R U') R' F' U' F (R U R') F (R' F' R) U' R", desc: '2 thanh 1x2 đối chéo, hoán vị góc và cạnh phải' },
-      { id: 'Ra', group: 'Đổi 2 góc & 2 cạnh (Adjacent)', name: 'Ra-Perm', alg: "(R U' R' U') (R U R D) (R' U' R D') (R' U2 R')", desc: 'Đèn bên trái, khối 1x2 ở trước' },
-      { id: 'Rb', group: 'Đổi 2 góc & 2 cạnh (Adjacent)', name: 'Rb-Perm', alg: "(R' U2 R U2) R' F (R U R' U') R' F' R2 U'", desc: 'Đèn ở trước, khối 1x2 bên trái' },
-      { id: 'T',  group: 'Đổi 2 góc & 2 cạnh (Adjacent)', name: 'T-Perm',  alg: "(R U R' U') (R' F R2 U') (R' U' R U) (R' F')", desc: 'Đèn bên trái, thanh 1x2 bên phải (kinh điển)' },
-      { id: 'Ua', group: 'Hoán vị 3 cạnh (Edges Only)', name: 'Ua-Perm', alg: "(R U' R U) (R U R U') (R' U' R2)", desc: 'Thanh giải ở sau, đổi 3 cạnh theo chiều kim đồng hồ' },
-      { id: 'Ub', group: 'Hoán vị 3 cạnh (Edges Only)', name: 'Ub-Perm', alg: "(R2 U R U) (R' U' R' U') (R' U R')", desc: 'Thanh giải ở sau, đổi 3 cạnh ngược chiều kim đồng hồ' },
-      { id: 'V',  group: 'Đổi 2 góc & 2 cạnh (Diagonal)', name: 'V-Perm',  alg: "(R' U R' U') y (R' F' R2 U') (R' U R' F) (R F)", desc: 'Khối 2x2 ở góc sau trái, đổi chéo góc và cạnh' },
-      { id: 'Y',  group: 'Đổi 2 góc & 2 cạnh (Diagonal)', name: 'Y-Perm',  alg: "F (R U' R' U') (R U R' F') (R U R' U') (R' F R F')", desc: 'Đèn ở sau, khối 1x2 ở sau phải, đổi 2 góc chéo' },
-      { id: 'Z',  group: 'Hoán vị 4 cạnh (Edges Only)', name: 'Z-Perm',  alg: "M2' U M2' U M' U2 M2' U2 M'", desc: 'Đổi 2 cặp cạnh liền kề chéo nhau' }
+      {"id": "Aa", "name": "Aa-Perm", "group": "Yiheng Wang · Bằng SpeedCuber", "alg": "x' R2 D2 (R' U' R) D2 (R' U R') x", "alternatives": ["y' x (R' U R') D2 (R U' R') D2 R2 x'"], "source": "PLL - Yiheng Wang - Finger Trick.pdf", "page": 1},
+      {"id": "Ab", "name": "Ab-Perm", "group": "Yiheng Wang · Bằng SpeedCuber", "alg": "x R2' D2 (R U R') D2 (R U' R) x'", "alternatives": [], "source": "PLL - Yiheng Wang - Finger Trick.pdf", "page": 1},
+      {"id": "E", "name": "E-Perm", "group": "Yiheng Wang · Bằng SpeedCuber", "alg": "x' (R U' R' D) (R U R' D') (R U R' D) (R U' R' D') x", "alternatives": [], "source": "PLL - Yiheng Wang - Finger Trick.pdf", "page": 1},
+      {"id": "F", "name": "F-Perm", "group": "Yiheng Wang · Bằng SpeedCuber", "alg": "R' U' F' (R U R' U') R' F R2 U' R' U' (R U R' U) R", "alternatives": [], "source": "PLL - Yiheng Wang - Finger Trick.pdf", "page": 1},
+      {"id": "Ga", "name": "Ga-Perm", "group": "Yiheng Wang · Bằng SpeedCuber", "alg": "D' R2 U (R' U R' U') R U' (R2 D U') R' U R", "alternatives": [], "source": "PLL - Yiheng Wang - Finger Trick.pdf", "page": 1},
+      {"id": "Gb", "name": "Gb-Perm", "group": "Yiheng Wang · Bằng SpeedCuber", "alg": "(R' U' R U D') R2 U R' U (R U' R U') R2' D", "alternatives": ["y (F' U' F) R2 u R' U (R U' R u') R2'"], "source": "PLL - Yiheng Wang - Finger Trick.pdf", "page": 1},
+      {"id": "Gc", "name": "Gc-Perm", "group": "Yiheng Wang · Bằng SpeedCuber", "alg": "R2' F2 (R U2 R U2') R' F (R U R' U') R' F R2", "alternatives": [], "source": "PLL - Yiheng Wang - Finger Trick.pdf", "page": 1},
+      {"id": "Gd", "name": "Gd-Perm", "group": "Yiheng Wang · Bằng SpeedCuber", "alg": "D' (R U R' U' D) R2 U' R U' (R' U R' U) R2", "alternatives": [], "source": "PLL - Yiheng Wang - Finger Trick.pdf", "page": 1},
+      {"id": "H", "name": "H-Perm", "group": "Yiheng Wang · Bằng SpeedCuber", "alg": "M2' U M2' U2 M2' U M2'", "alternatives": [], "source": "PLL - Yiheng Wang - Finger Trick.pdf", "page": 1},
+      {"id": "Ja", "name": "Ja-Perm", "group": "Yiheng Wang · Bằng SpeedCuber", "alg": "L' U' L F (L' U' L U) L F' L2 U L", "alternatives": [], "source": "PLL - Yiheng Wang - Finger Trick.pdf", "page": 1},
+      {"id": "Jb", "name": "Jb-Perm", "group": "Yiheng Wang · Bằng SpeedCuber", "alg": "R U R' F' (R U R' U') R' F R2 U' R'", "alternatives": [], "source": "PLL - Yiheng Wang - Finger Trick.pdf", "page": 1},
+      {"id": "Na", "name": "Na-Perm", "group": "Yiheng Wang · Bằng SpeedCuber", "alg": "(R U R' U) R U R' F' (R U R' U') R' F R2 U' R' (U2 R U' R')", "alternatives": [], "source": "PLL - Yiheng Wang - Finger Trick.pdf", "page": 1},
+      {"id": "Nb", "name": "Nb-Perm", "group": "Yiheng Wang · Bằng SpeedCuber", "alg": "(R' U R U' R') F' U' F (R U R' U') R U' f R f'", "alternatives": [], "source": "PLL - Yiheng Wang - Finger Trick.pdf", "page": 1},
+      {"id": "Ra", "name": "Ra-Perm", "group": "Yiheng Wang · Bằng SpeedCuber", "alg": "(R U' R' U') R U R D (R' U' R D') R' U2 R'", "alternatives": [], "source": "PLL - Yiheng Wang - Finger Trick.pdf", "page": 1},
+      {"id": "Rb", "name": "Rb-Perm", "group": "Yiheng Wang · Bằng SpeedCuber", "alg": "(R' U2' R U2') R' F (R U R' U') R' F' R2", "alternatives": [], "source": "PLL - Yiheng Wang - Finger Trick.pdf", "page": 1},
+      {"id": "T", "name": "T-Perm", "group": "Yiheng Wang · Bằng SpeedCuber", "alg": "(R U R' U') R' F R2 U' R' U' R U R' F'", "alternatives": ["(R U R' U') R' F R2 U' R' U F' L' U L"], "source": "PLL - Yiheng Wang - Finger Trick.pdf", "page": 1},
+      {"id": "Ua", "name": "Ua-Perm", "group": "Yiheng Wang · Bằng SpeedCuber", "alg": "(R U R' U) R' U' R2 U' R' U R' U R", "alternatives": [], "source": "PLL - Yiheng Wang - Finger Trick.pdf", "page": 1},
+      {"id": "Ub", "name": "Ub-Perm", "group": "Yiheng Wang · Bằng SpeedCuber", "alg": "R2' U (R U R' U') R3 U' R' U R'", "alternatives": ["y2 R' U R' U' R3 U' R' U R U R2'"], "source": "PLL - Yiheng Wang - Finger Trick.pdf", "page": 1},
+      {"id": "V", "name": "V-Perm", "group": "Yiheng Wang · Bằng SpeedCuber", "alg": "y' (R' U R' U') R D' R' D (R' U D') R2 U' R2' D R2", "alternatives": [], "desc": "Dùng cách thứ hai trong PDF. Cách đầu có ký hiệu không rõ ở đầu chuỗi nên không đưa vào bộ luyện tập.", "source": "PLL - Yiheng Wang - Finger Trick.pdf", "page": 1},
+      {"id": "Y", "name": "Y-Perm", "group": "Yiheng Wang · Bằng SpeedCuber", "alg": "F (R U' R' U') R U R' F' (R U R' U') (R' F R F')", "alternatives": [], "source": "PLL - Yiheng Wang - Finger Trick.pdf", "page": 1},
+      {"id": "Z", "name": "Z-Perm", "group": "Yiheng Wang · Bằng SpeedCuber", "alg": "M' U (M2' U) (M2' U) M' U2 M2'", "alternatives": [], "source": "PLL - Yiheng Wang - Finger Trick.pdf", "page": 1}
     ];
 
     // ALL 57 OLL CASES (WANG YIHENG STANDARDS)
@@ -949,56 +956,233 @@
 
     // ALL 41 F2L CASES
     const F2L_41_CASES = [
-      // 1. Cặp ghép sẵn (Basic Insert)
-      { id: 1,  group: 'Cặp ghép sẵn (Basic Insert)', name: 'F2L 1', alg: "U (R U' R')", desc: 'Ghép sẵn chèn slot phải' },
-      { id: 2,  group: 'Cặp ghép sẵn (Basic Insert)', name: 'F2L 2', alg: "y' U' (R' U R)", desc: 'Ghép sẵn chèn slot trái' },
-      { id: 3,  group: 'Cặp ghép sẵn (Basic Insert)', name: 'F2L 3', alg: "y' (R' U R)", desc: 'Chèn trực tiếp slot trái' },
-      { id: 4,  group: 'Cặp ghép sẵn (Basic Insert)', name: 'F2L 4', alg: "R U' R'", desc: 'Chèn trực tiếp slot phải' },
+      {"id": "br-1", "name": "F2L BR 1", "group": "Back Right", "alg": "f R' f'", "alternatives": ["y R U' R'"], "slot": "BR", "source": "41 F2L BR Slot - Bằng SpeedCuber.pdf", "page": 1, "stickers": {"U": "XXXXUBXXB", "F": "XXDLLLLLL", "R": "RRXBBXBBX"}},
+      {"id": "br-2", "name": "F2L BR 2", "group": "Back Right", "alg": "U R' U2' R", "alternatives": [], "slot": "BR", "source": "41 F2L BR Slot - Bằng SpeedCuber.pdf", "page": 1, "stickers": {"U": "XXXXUXXRR", "F": "XBBLLLLLL", "R": "DXXBBXBBX"}},
+      {"id": "br-3", "name": "F2L BR 3", "group": "Back Right", "alg": "R' U' R", "alternatives": [], "slot": "BR", "source": "41 F2L BR Slot - Bằng SpeedCuber.pdf", "page": 1, "stickers": {"U": "XXBXUXXRX", "F": "XBXLLLLLL", "R": "XXDBBXBBX"}},
+      {"id": "br-4", "name": "F2L BR 4", "group": "Back Right", "alg": "f R f'", "alternatives": ["y R U R'"], "slot": "BR", "source": "41 F2L BR Slot - Bằng SpeedCuber.pdf", "page": 1, "stickers": {"U": "XXRBUXXXX", "F": "XXXLLLLLL", "R": "XXBBBXBBX"}},
+      {"id": "br-5", "name": "F2L BR 5", "group": "Back Right", "alg": "y U' R U R' U2 R U' R'", "alternatives": ["U r' U R U' R' U' r"], "slot": "BR", "source": "41 F2L BR Slot - Bằng SpeedCuber.pdf", "page": 1, "stickers": {"U": "XXBBUXXXX", "F": "XXXLLLLLL", "R": "XXDBBXBBX"}},
+      {"id": "br-6", "name": "F2L BR 6", "group": "Back Right", "alg": "R' U' R U R' U2' R", "alternatives": [], "slot": "BR", "source": "41 F2L BR Slot - Bằng SpeedCuber.pdf", "page": 1, "stickers": {"U": "XXXRUXXXR", "F": "XXBLLLLLL", "R": "DXXBBXBBX"}},
+      {"id": "br-7", "name": "F2L BR 7", "group": "Back Right", "alg": "y U' R U2' R' U2 R U' R'", "alternatives": ["r U2 R2 U' R2 U' r'"], "slot": "BR", "source": "41 F2L BR Slot - Bằng SpeedCuber.pdf", "page": 1, "stickers": {"U": "XXBXUXXBX", "F": "XRXLLLLLL", "R": "XXDBBXBBX"}},
+      {"id": "br-8", "name": "F2L BR 8", "group": "Back Right", "alg": "R' U2' R U R' U2' R", "alternatives": [], "slot": "BR", "source": "41 F2L BR Slot - Bằng SpeedCuber.pdf", "page": 1, "stickers": {"U": "XRXXUXXXR", "F": "XXBLLLLLL", "R": "DXXBBXBBX"}},
+      {"id": "br-9", "name": "F2L BR 9", "group": "Back Right", "alg": "R' U' R U' R' U' R", "alternatives": [], "slot": "BR", "source": "41 F2L BR Slot - Bằng SpeedCuber.pdf", "page": 1, "stickers": {"U": "XRXXUXXXB", "F": "XXDLLLLLL", "R": "RXXBBXBBX"}},
+      {"id": "br-10", "name": "F2L BR 10", "group": "Back Right", "alg": "y U R U' R' U' R U R'", "alternatives": ["R' U R U' y R U R'"], "slot": "BR", "source": "41 F2L BR Slot - Bằng SpeedCuber.pdf", "page": 1, "stickers": {"U": "XXXBUXXXR", "F": "XXBLLLLLL", "R": "DXXBBXBBX"}},
+      {"id": "br-11", "name": "F2L BR 11", "group": "Back Right", "alg": "R U2' R2' U' R2 U' R'", "alternatives": [], "slot": "BR", "source": "41 F2L BR Slot - Bằng SpeedCuber.pdf", "page": 1, "stickers": {"U": "XRBXUXXXX", "F": "XXXLLLLLL", "R": "XXDBBXBBX"}},
+      {"id": "br-12", "name": "F2L BR 12", "group": "Back Right", "alg": "R' U2' R U' y R U R'", "alternatives": [], "slot": "BR", "source": "41 F2L BR Slot - Bằng SpeedCuber.pdf", "page": 1, "stickers": {"U": "XXXXUXXBR", "F": "XRBLLLLLL", "R": "DXXBBXBBX"}},
+      {"id": "br-13", "name": "F2L BR 13", "group": "Back Right", "alg": "R' U R U' R' U' R", "alternatives": [], "slot": "BR", "source": "41 F2L BR Slot - Bằng SpeedCuber.pdf", "page": 1, "stickers": {"U": "XXXXUXXRB", "F": "XBDLLLLLL", "R": "RXXBBXBBX"}},
+      {"id": "br-14", "name": "F2L BR 14", "group": "Back Right", "alg": "y U2 R U' R' U R U R'", "alternatives": [], "slot": "BR", "source": "41 F2L BR Slot - Bằng SpeedCuber.pdf", "page": 1, "stickers": {"U": "XXXXUBXXR", "F": "XXBLLLLLL", "R": "DRXBBXBBX"}},
+      {"id": "br-15", "name": "F2L BR 15", "group": "Back Right", "alg": "R' U R U2 y R U R'", "alternatives": [], "slot": "BR", "source": "41 F2L BR Slot - Bằng SpeedCuber.pdf", "page": 1, "stickers": {"U": "XXBXUBXXX", "F": "XXXLLLLLL", "R": "XRDBBXBBX"}},
+      {"id": "br-16", "name": "F2L BR 16", "group": "Back Right", "alg": "U' R' U2' R U R' U R U2 R' U' R", "alternatives": ["U' y R U' R' U2 y' R' U' R"], "slot": "BR", "source": "41 F2L BR Slot - Bằng SpeedCuber.pdf", "page": 1, "stickers": {"U": "XXXXURXXR", "F": "XXBLLLLLL", "R": "DBXBBXBBX"}},
+      {"id": "br-17", "name": "F2L BR 17", "group": "Back Right", "alg": "y U' R U2' R' U' R U R'", "alternatives": [], "slot": "BR", "source": "41 F2L BR Slot - Bằng SpeedCuber.pdf", "page": 1, "stickers": {"U": "XXXXUBXXD", "F": "XXRLLLLLL", "R": "BRXBBXBBX"}},
+      {"id": "br-18", "name": "F2L BR 18", "group": "Back Right", "alg": "R' U2' R U R' U' R", "alternatives": [], "slot": "BR", "source": "41 F2L BR Slot - Bằng SpeedCuber.pdf", "page": 1, "stickers": {"U": "XXDXURXXX", "F": "XXXLLLLLL", "R": "XBRBBXBBX"}},
+      {"id": "br-19", "name": "F2L BR 19", "group": "Back Right", "alg": "y R U2' R' U R U' R'", "alternatives": [], "slot": "BR", "source": "41 F2L BR Slot - Bằng SpeedCuber.pdf", "page": 1, "stickers": {"U": "XBXXUXXXD", "F": "XXRLLLLLL", "R": "BXXBBXBBX"}},
+      {"id": "br-20", "name": "F2L BR 20", "group": "Back Right", "alg": "R' U2' R U' R' U R", "alternatives": [], "slot": "BR", "source": "41 F2L BR Slot - Bằng SpeedCuber.pdf", "page": 1, "stickers": {"U": "DXXXURXXX", "F": "XXXLLLLLL", "R": "XBXBBXBBX"}},
+      {"id": "br-21", "name": "F2L BR 21", "group": "Back Right", "alg": "y R U R' U R U' R'", "alternatives": [], "slot": "BR", "source": "41 F2L BR Slot - Bằng SpeedCuber.pdf", "page": 1, "stickers": {"U": "XBXXUXDXX", "F": "BXXLLLLLL", "R": "XXXBBXBBX"}},
+      {"id": "br-22", "name": "F2L BR 22", "group": "Back Right", "alg": "R' U' R U' R' U R", "alternatives": [], "slot": "BR", "source": "41 F2L BR Slot - Bằng SpeedCuber.pdf", "page": 1, "stickers": {"U": "XXXXURDXX", "F": "BXXLLLLLL", "R": "XBXBBXBBX"}},
+      {"id": "br-23", "name": "F2L BR 23", "group": "Back Right", "alg": "y R U' R' U' R U' R' U R U' R'", "alternatives": [], "slot": "BR", "source": "41 F2L BR Slot - Bằng SpeedCuber.pdf", "page": 1, "stickers": {"U": "XXXXUXXBD", "F": "XRRLLLLLL", "R": "BXXBBXBBX"}},
+      {"id": "br-24", "name": "F2L BR 24", "group": "Back Right", "alg": "R' U' R U R' U R U R' U2' R", "alternatives": [], "slot": "BR", "source": "41 F2L BR Slot - Bằng SpeedCuber.pdf", "page": 1, "stickers": {"U": "XXXXUXDRX", "F": "BBXLLLLLL", "R": "XXXBBXBBX"}},
+      {"id": "br-25", "name": "F2L BR 25", "group": "Back Right", "alg": "U R' U R y U R U' R'", "alternatives": ["U y R' F R F' R U R'"], "slot": "BR", "source": "41 F2L BR Slot - Bằng SpeedCuber.pdf", "page": 1, "stickers": {"U": "XXXXUXXBX", "F": "XRXLLLLLL", "R": "XXXBBXBBB"}},
+      {"id": "br-26", "name": "F2L BR 26", "group": "Back Right", "alg": "R' U R U R' U R U' R' U' R", "alternatives": [], "slot": "BR", "source": "41 F2L BR Slot - Bằng SpeedCuber.pdf", "page": 1, "stickers": {"U": "XXXXURXXX", "F": "XXXLLLLLL", "R": "XBXBBXBBB"}},
+      {"id": "br-27", "name": "F2L BR 27", "group": "Back Right", "alg": "y R U' R' U R U' R'", "alternatives": [], "slot": "BR", "source": "41 F2L BR Slot - Bằng SpeedCuber.pdf", "page": 1, "stickers": {"U": "XBXXUXXXX", "F": "XXXLLLLLL", "R": "XXXBBXBBD"}},
+      {"id": "br-28", "name": "F2L BR 28", "group": "Back Right", "alg": "R' U R U' R' U R", "alternatives": [], "slot": "BR", "source": "41 F2L BR Slot - Bằng SpeedCuber.pdf", "page": 1, "stickers": {"U": "XXXXURXXX", "F": "XXXLLLLLL", "R": "XBXBBXBBR"}},
+      {"id": "br-29", "name": "F2L BR 29", "group": "Back Right", "alg": "R' U' R U R' U' R", "alternatives": [], "slot": "BR", "source": "41 F2L BR Slot - Bằng SpeedCuber.pdf", "page": 1, "stickers": {"U": "XXXXURXXX", "F": "XXXLLLLLL", "R": "XBXBBXBBD"}},
+      {"id": "br-30", "name": "F2L BR 30", "group": "Back Right", "alg": "y R U R' U' R U R'", "alternatives": [], "slot": "BR", "source": "41 F2L BR Slot - Bằng SpeedCuber.pdf", "page": 1, "stickers": {"U": "XBXXUXXXX", "F": "XXXLLLLLL", "R": "XXXBBXBBR"}},
+      {"id": "br-31", "name": "F2L BR 31", "group": "Back Right", "alg": "y U' R' F R F' R U' R'", "alternatives": ["R' U R U' y R U' R'"], "slot": "BR", "source": "41 F2L BR Slot - Bằng SpeedCuber.pdf", "page": 1, "stickers": {"U": "XXDXUXXXX", "F": "XXXLLLLLL", "R": "XXRBBRBBX"}},
+      {"id": "br-32", "name": "F2L BR 32", "group": "Back Right", "alg": "R' U' R U R' U' R U R' U' R", "alternatives": [], "slot": "BR", "source": "41 F2L BR Slot - Bằng SpeedCuber.pdf", "page": 1, "stickers": {"U": "XXDXUXXXX", "F": "XXXLLLLLL", "R": "XXRBBBBBX"}},
+      {"id": "br-33", "name": "F2L BR 33", "group": "Back Right", "alg": "R' U2' R U' R' U' R", "alternatives": [], "slot": "BR", "source": "41 F2L BR Slot - Bằng SpeedCuber.pdf", "page": 1, "stickers": {"U": "XXXXUXXXB", "F": "XXDLLLLLL", "R": "RXXBBBBBX"}},
+      {"id": "br-34", "name": "F2L BR 34", "group": "Back Right", "alg": "R' U R U R' U2' R", "alternatives": [], "slot": "BR", "source": "41 F2L BR Slot - Bằng SpeedCuber.pdf", "page": 1, "stickers": {"U": "XXXXUXXXR", "F": "XXBLLLLLL", "R": "DXXBBBBBX"}},
+      {"id": "br-35", "name": "F2L BR 35", "group": "Back Right", "alg": "U f R f' U' R' U R", "alternatives": [], "slot": "BR", "source": "41 F2L BR Slot - Bằng SpeedCuber.pdf", "page": 1, "stickers": {"U": "XXXXUXXXB", "F": "XXDLLLLLL", "R": "RXXBBRBBX"}},
+      {"id": "br-36", "name": "F2L BR 36", "group": "Back Right", "alg": "R' U' R U' y R U R'", "alternatives": [], "slot": "BR", "source": "41 F2L BR Slot - Bằng SpeedCuber.pdf", "page": 1, "stickers": {"U": "XXXXUXXXR", "F": "XXBLLLLLL", "R": "DXXBBRBBX"}},
+      {"id": "br-37", "name": "F2L BR 37", "group": "Back Right", "alg": "R' U R y U' R U2' R' U2 R U' R'", "alternatives": ["R' U R r U2 R2 U' R2 U' r'"], "slot": "BR", "source": "41 F2L BR Slot - Bằng SpeedCuber.pdf", "page": 1, "stickers": {"U": "XXXXUXXXX", "F": "XXXLLLLLL", "R": "XXXBBRBBB"}},
+      {"id": "br-38", "name": "F2L BR 38", "group": "Back Right", "alg": "R' U' R U2 R' U R U' R' U' R", "alternatives": [], "slot": "BR", "source": "41 F2L BR Slot - Bằng SpeedCuber.pdf", "page": 1, "stickers": {"U": "XXXXUXXXX", "F": "XXXLLLLLL", "R": "XXXBBBBBD"}},
+      {"id": "br-39", "name": "F2L BR 39", "group": "Back Right", "alg": "R' U' R U R' U2' R U R' U' R", "alternatives": [], "slot": "BR", "source": "41 F2L BR Slot - Bằng SpeedCuber.pdf", "page": 1, "stickers": {"U": "XXXXUXXXX", "F": "XXXLLLLLL", "R": "XXXBBBBBR"}},
+      {"id": "br-40", "name": "F2L BR 40", "group": "Back Right", "alg": "R' U R r' U r U2 r' U' r", "alternatives": [], "slot": "BR", "source": "41 F2L BR Slot - Bằng SpeedCuber.pdf", "page": 1, "stickers": {"U": "XXXXUXXXX", "F": "XXXLLLLLL", "R": "XXXBBRBBD"}},
+      {"id": "br-41", "name": "F2L BR 41", "group": "Back Right", "alg": "r' U r U2 r' U' r R' U' R", "alternatives": [], "slot": "BR", "source": "41 F2L BR Slot - Bằng SpeedCuber.pdf", "page": 1, "stickers": {"U": "XXXXUXXXX", "F": "XXXLLLLLL", "R": "XXXBBRBBR"}}
+    ];
 
-      // 2. Khác màu đỉnh (Different top color)
-      { id: 5,  group: 'Khác màu đỉnh', name: 'F2L 5', alg: "R U R'", desc: 'Góc hướng phải, cạnh khớp tâm' },
-      { id: 6,  group: 'Khác màu đỉnh', name: 'F2L 6', alg: "y' (R' U' R)", desc: 'Góc hướng trước, cạnh khớp tâm trái' },
-      { id: 7,  group: 'Khác màu đỉnh', name: 'F2L 7', alg: "U' (R U R') U (R U R')", desc: 'Tách góc và cạnh rồi chèn cơ bản' },
-      { id: 8,  group: 'Khác màu đỉnh', name: 'F2L 8', alg: "y' U (R' U' R) U' (R' U' R)", desc: 'Tách góc và cạnh bên trái' },
-      { id: 9,  group: 'Khác màu đỉnh', name: 'F2L 9', alg: "U' (R U' R' U) (R U R')", desc: 'Đưa về cặp ghép sẵn' },
-      { id: 10, group: 'Khác màu đỉnh', name: 'F2L 10', alg: "y' U (R' U R U') (R' U' R)", desc: 'Đưa về cặp ghép sẵn bên trái' },
-      { id: 11, group: 'Khác màu đỉnh', name: 'F2L 11', alg: "U' (R U2' R') U (R U R')", desc: 'Tách góc xa' },
-      { id: 12, group: 'Khác màu đỉnh', name: 'F2L 12', alg: "y' U (R' U2 R) U' (R' U' R)", desc: 'Tách góc xa bên trái' },
+    const F2L_ADVANCED_CASES = [
+      {"id": "advanced-1", "name": "Advanced 1", "group": "Basic Inserts", "alg": "U (R U' R')", "alternatives": [], "slot": "FR", "source": "Advanced F2L.pdf", "page": 1, "desc": "", "stickers": {"U": "XXXXXRXXR", "F": "XXDRRXRRX", "R": "FFXXFFXFF"}},
+      {"id": "advanced-2", "name": "Advanced 2", "group": "Basic Inserts", "alg": "y' U' (R' U R)", "alternatives": ["y U' (L' U L)"], "slot": "FR", "source": "Advanced F2L.pdf", "page": 1, "desc": "", "stickers": {"U": "XXXXXXXRR", "F": "XBBBBXBBX", "R": "DXXXRRXRR"}},
+      {"id": "advanced-3", "name": "Advanced 3", "group": "Basic Inserts", "alg": "y' (R' U' R)", "alternatives": ["y (L' U' L)"], "slot": "FR", "source": "Advanced F2L.pdf", "page": 1, "desc": "", "stickers": {"U": "XXXRXXXXB", "F": "XXDBBXBBX", "R": "RXXXRRXRR"}},
+      {"id": "advanced-4", "name": "Advanced 4", "group": "Basic Inserts", "alg": "(R U R')", "alternatives": [], "slot": "FR", "source": "Advanced F2L.pdf", "page": 1, "desc": "", "stickers": {"U": "XRXXXXXXF", "F": "XXRRRXRRX", "R": "DXXXFFXFF"}},
+      {"id": "advanced-5", "name": "Advanced 5", "group": "F2L Case 1", "alg": "U' (R U' R' U) y' (R' U' R)", "alternatives": ["y' U (R' U' R U') (R' U' R)"], "slot": "FR", "source": "Advanced F2L.pdf", "page": 1, "desc": "", "stickers": {"U": "XRXXXXXXB", "F": "XXDBBXBBX", "R": "RXXXRRXRR"}},
+      {"id": "advanced-6", "name": "Advanced 6", "group": "F2L Case 1", "alg": "U' (R U R' U) (R U R')", "alternatives": [], "slot": "FR", "source": "Advanced F2L.pdf", "page": 1, "desc": "", "stickers": {"U": "XXXRXXXXF", "F": "XXRRRXRRX", "R": "DXXXFFXFF"}},
+      {"id": "advanced-7", "name": "Advanced 7", "group": "F2L Case 1", "alg": "U' (R U2' R' U) y' (R' U' R)", "alternatives": ["U' (R U2' R') d (R' U' R)"], "slot": "FR", "source": "Advanced F2L.pdf", "page": 1, "desc": "", "stickers": {"U": "XXXXXRXXB", "F": "XXDBBXBBX", "R": "RBXXRRXRR"}},
+      {"id": "advanced-8", "name": "Advanced 8", "group": "F2L Case 1", "alg": "R' U2' R2 U R2' U R", "alternatives": ["y' U (R' U2 R) U' y (R U R')", "(R U' R' U) (R U' R') U2 (R U' R')"], "slot": "FR", "source": "Advanced F2L.pdf", "page": 1, "desc": "", "stickers": {"U": "XXXXXXXRF", "F": "XFRRRXRRX", "R": "DXXXFFXFF"}},
+      {"id": "advanced-9", "name": "Advanced 9", "group": "F2L Case 1", "alg": "y' U (R' U R U') (R' U' R)", "alternatives": [], "slot": "FR", "source": "Advanced F2L.pdf", "page": 1, "desc": "", "stickers": {"U": "XXXXXXXRB", "F": "XBDBBXBBX", "R": "RXXXRRXRR"}},
+      {"id": "advanced-10", "name": "Advanced 10", "group": "F2L Case 1", "alg": "U' (R U' R' U) (R U R')", "alternatives": [], "slot": "FR", "source": "Advanced F2L.pdf", "page": 1, "desc": "", "stickers": {"U": "XXXXXRXXF", "F": "XXRRRXRRX", "R": "DFXXFFXFF"}},
+      {"id": "advanced-11", "name": "Advanced 11", "group": "F2L Case 2", "alg": "(U' R U R') U2 (R U' R')", "alternatives": [], "slot": "FR", "source": "Advanced F2L.pdf", "page": 1, "desc": "", "stickers": {"U": "XRXXXXXXR", "F": "XXDRRXRRX", "R": "FXXXFFXFF"}},
+      {"id": "advanced-12", "name": "Advanced 12", "group": "F2L Case 2", "alg": "y' (U R' U' R) U2' (R' U R)", "alternatives": ["d (R' U' R) U2' (R' U R)"], "slot": "FR", "source": "Advanced F2L.pdf", "page": 1, "desc": "Note – (y' U) and (d) are interchangeable", "stickers": {"U": "XXXRXXXXR", "F": "XXBBBXBBX", "R": "DXXXRRXRR"}},
+      {"id": "advanced-13", "name": "Advanced 13", "group": "F2L Case 2", "alg": "U' (R U2' R') U2 (R U' R')", "alternatives": [], "slot": "FR", "source": "Advanced F2L.pdf", "page": 1, "desc": "", "stickers": {"U": "XXXRXXXXR", "F": "XXDRRXRRX", "R": "FXXXFFXFF"}},
+      {"id": "advanced-14", "name": "Advanced 14", "group": "F2L Case 2", "alg": "y' U (R' U2 R) U2' (R' U R)", "alternatives": ["d (R' U2 R) U2' (R' U R)"], "slot": "FR", "source": "Advanced F2L.pdf", "page": 1, "desc": "", "stickers": {"U": "XRXXXXXXR", "F": "XXBBBXBBX", "R": "DXXXRRXRR"}},
+      {"id": "advanced-15", "name": "Advanced 15", "group": "F2L Case 3", "alg": "U (R U2' R') U (R U' R')", "alternatives": [], "slot": "FR", "source": "Advanced F2L.pdf", "page": 1, "desc": "", "stickers": {"U": "XRXXXXXXD", "F": "XXFRRXRRX", "R": "RXXXFFXFF"}},
+      {"id": "advanced-16", "name": "Advanced 16", "group": "F2L Case 3", "alg": "y' U' (R' U2 R) U' (R' U R)", "alternatives": [], "slot": "FR", "source": "Advanced F2L.pdf", "page": 1, "desc": "", "stickers": {"U": "XXXRXXXXD", "F": "XXRBBXBBX", "R": "BXXXRRXRR"}},
+      {"id": "advanced-17", "name": "Advanced 17", "group": "F2L Case 3", "alg": "U2 (R U R' U) (R U' R')", "alternatives": ["(R U' R') U2 (R U R')"], "slot": "FR", "source": "Advanced F2L.pdf", "page": 1, "desc": "", "stickers": {"U": "XXXRXXXXD", "F": "XXFRRXRRX", "R": "RXXXFFXFF"}},
+      {"id": "advanced-18", "name": "Advanced 18", "group": "F2L Case 3", "alg": "y' U2 (R' U' R) U' (R' U R)", "alternatives": ["F' L' U2 L F"], "slot": "FR", "source": "Advanced F2L.pdf", "page": 1, "desc": "Note – The second algorithm is fewer moves, but less intuitive and less finger- friendly.", "stickers": {"U": "XRXXXXXXD", "F": "XXRBBXBBX", "R": "BXXXRRXRR"}},
+      {"id": "advanced-19", "name": "Advanced 19", "group": "Incorrectly Connected Pieces", "alg": "y' (R' U R) U2' y (R U R')", "alternatives": ["(R U R') U2 (R U' R' U) (R U' R')"], "slot": "FR", "source": "Advanced F2L.pdf", "page": 2, "desc": "", "stickers": {"U": "XXXXXXXRR", "F": "XFDRRXRRX", "R": "FXXXFFXFF"}},
+      {"id": "advanced-20", "name": "Advanced 20", "group": "Incorrectly Connected Pieces", "alg": "(R U' R' U2) y' (R' U' R)", "alternatives": ["U F (R U R' U') F' (U R U' R')"], "slot": "FR", "source": "Advanced F2L.pdf", "page": 2, "desc": "", "stickers": {"U": "XXXXXRXXR", "F": "XXBBBXBBX", "R": "DBXXRRXRR"}},
+      {"id": "advanced-21", "name": "Advanced 21", "group": "Incorrectly Connected Pieces", "alg": "(R U2 R') U' (R U R')", "alternatives": [], "slot": "FR", "source": "Advanced F2L.pdf", "page": 2, "desc": "", "stickers": {"U": "XXXXXRXXD", "F": "XXFRRXRRX", "R": "RFXXFFXFF"}},
+      {"id": "advanced-22", "name": "Advanced 22", "group": "Incorrectly Connected Pieces", "alg": "y' (R' U2 R) U (R' U' R)", "alternatives": [], "slot": "FR", "source": "Advanced F2L.pdf", "page": 2, "desc": "", "stickers": {"U": "XXXXXXXRD", "F": "XBRBBXBBX", "R": "BXXXRRXRR"}},
+      {"id": "advanced-23", "name": "Advanced 23", "group": "Incorrectly Connected Pieces", "alg": "U (R U' R' U') (R U' R' U) (R U' R')", "alternatives": ["(R U R' U2') (R U R' U') (R U R')"], "slot": "FR", "source": "Advanced F2L.pdf", "page": 2, "desc": "", "stickers": {"U": "XXXXXXXRD", "F": "XFFRRXRRX", "R": "RXXXFFXFF"}},
+      {"id": "advanced-24", "name": "Advanced 24", "group": "Incorrectly Connected Pieces", "alg": "y' U' (R' U R U) (R' U R U') (R' U R)", "alternatives": ["F (U R U' R') F' (R U' R')"], "slot": "FR", "source": "Advanced F2L.pdf", "page": 2, "desc": "", "stickers": {"U": "XXXXXRXXD", "F": "XXRBBXBBX", "R": "BBXXRRXRR"}},
+      {"id": "advanced-25", "name": "Advanced 25", "group": "Corner in Place, Edge in U Face", "alg": "U' F' (R U R' U') R' F R", "alternatives": ["R' F' R U (R U' R') F"], "slot": "FR", "source": "Advanced F2L.pdf", "page": 2, "desc": "", "stickers": {"U": "XXXXXRXXX", "F": "XXXRRXRRR", "R": "XFXXFFFFF"}},
+      {"id": "advanced-26", "name": "Advanced 26", "group": "Corner in Place, Edge in U Face", "alg": "U (R U' R') U' (F' U F)", "alternatives": ["U (R U' R') (F R' F' R)"], "slot": "FR", "source": "Advanced F2L.pdf", "page": 2, "desc": "", "stickers": {"U": "XXXXXXXRX", "F": "XBXBBXBBB", "R": "XXXXRRRRR"}},
+      {"id": "advanced-27", "name": "Advanced 27", "group": "Corner in Place, Edge in U Face", "alg": "(R U' R' U) (R U' R')", "alternatives": [], "slot": "FR", "source": "Advanced F2L.pdf", "page": 2, "desc": "", "stickers": {"U": "XXXXXRXXX", "F": "XXXRRXRRD", "R": "XFXXFFRFF"}},
+      {"id": "advanced-28", "name": "Advanced 28", "group": "Corner in Place, Edge in U Face", "alg": "y' (R' U R U') (R' U R)", "alternatives": [], "slot": "FR", "source": "Advanced F2L.pdf", "page": 2, "desc": "", "stickers": {"U": "XXXXXXXRX", "F": "XBXBBXBBR", "R": "XXXXRRDRR"}},
+      {"id": "advanced-29", "name": "Advanced 29", "group": "Corner in Place, Edge in U Face", "alg": "y' (R' U' R U) (R' U' R)", "alternatives": ["(R' F R F') U (R U' R')"], "slot": "FR", "source": "Advanced F2L.pdf", "page": 2, "desc": "", "stickers": {"U": "XXXXXXXRX", "F": "XBXBBXBBD", "R": "XXXXRRBRR"}},
+      {"id": "advanced-30", "name": "Advanced 30", "group": "Corner in Place, Edge in U Face", "alg": "(R U R' U') (R U R')", "alternatives": [], "slot": "FR", "source": "Advanced F2L.pdf", "page": 2, "desc": "", "stickers": {"U": "XXXXXRXXX", "F": "XXXRRXRRF", "R": "XFXXFFDFF"}},
+      {"id": "advanced-31", "name": "Advanced 31", "group": "Edge in Place, Corner in U face", "alg": "(R U' R' U) y' (R' U R)", "alternatives": ["U' (R' F R F') (R U' R')"], "slot": "FR", "source": "Advanced F2L.pdf", "page": 2, "desc": "", "stickers": {"U": "XXXXXXXXD", "F": "XXRBBRBBX", "R": "BXXBRRXRR"}},
+      {"id": "advanced-32", "name": "Advanced 32", "group": "Edge in Place, Corner in U face", "alg": "(U R U' R') (U R U' R') (U R U' R')", "alternatives": [], "slot": "FR", "source": "Advanced F2L.pdf", "page": 2, "desc": "", "stickers": {"U": "XXXXXXXXD", "F": "XXFRRRRRX", "R": "RXXFFFXFF"}},
+      {"id": "advanced-33", "name": "Advanced 33", "group": "Edge in Place, Corner in U face", "alg": "(U' R U' R') U2 (R U' R')", "alternatives": [], "slot": "FR", "source": "Advanced F2L.pdf", "page": 2, "desc": "", "stickers": {"U": "XXXXXXXXR", "F": "XXDRRRRRX", "R": "FXXFFFXFF"}},
+      {"id": "advanced-34", "name": "Advanced 34", "group": "Edge in Place, Corner in U face", "alg": "U (R U R') U2 (R U R')", "alternatives": [], "slot": "FR", "source": "Advanced F2L.pdf", "page": 2, "desc": "", "stickers": {"U": "XXXXXXXXF", "F": "XXRRRRRRX", "R": "DXXFFFXFF"}},
+      {"id": "advanced-35", "name": "Advanced 35", "group": "Edge in Place, Corner in U face", "alg": "(U' R U R') d (R' U' R)", "alternatives": [], "slot": "FR", "source": "Advanced F2L.pdf", "page": 2, "desc": "", "stickers": {"U": "XXXXXXXXB", "F": "XXDBBRBBX", "R": "RXXBRRXRR"}},
+      {"id": "advanced-36", "name": "Advanced 36", "group": "Edge in Place, Corner in U face", "alg": "U (F' U' F) U' (R U R')", "alternatives": [], "slot": "FR", "source": "Advanced F2L.pdf", "page": 2, "desc": "", "stickers": {"U": "XXXXXXXXR", "F": "XXBBBRBBX", "R": "DXXBRRXRR"}},
+      {"id": "advanced-37", "name": "Advanced 37", "group": "Edge and Corner in Place", "alg": "(R U' R') d (R' U2 R) U2' (R' U R)", "alternatives": [], "slot": "FR", "source": "Advanced F2L.pdf", "page": 2, "desc": "", "stickers": {"U": "XXXXXXXXX", "F": "XXXBBRBBB", "R": "XXXBRRRRR"}},
+      {"id": "advanced-38", "name": "Advanced 38", "group": "Edge and Corner in Place", "alg": "(R U' R' U') R U R' U2 (R U' R')", "alternatives": ["(R U R' U') R U2 R' U' (R U R')"], "slot": "FR", "source": "Advanced F2L.pdf", "page": 2, "desc": "", "stickers": {"U": "XXXXXXXXX", "F": "XXXRRRRRD", "R": "XXXFFFRFF"}},
+      {"id": "advanced-39", "name": "Advanced 39", "group": "Edge and Corner in Place", "alg": "(R U' R' U) (R U2' R') U (R U' R')", "alternatives": ["(R U R') U2' (R U' R' U) (R U R')"], "slot": "FR", "source": "Advanced F2L.pdf", "page": 2, "desc": "", "stickers": {"U": "XXXXXXXXX", "F": "XXXRRRRRF", "R": "XXXFFFDFF"}},
+      {"id": "advanced-40", "name": "Advanced 40", "group": "Edge and Corner in Place", "alg": "(F' U F) U2 (R U R' U) (R U' R')", "alternatives": ["(R U' R') F (R U R' U') F' (R U' R')"], "slot": "FR", "source": "Advanced F2L.pdf", "page": 2, "desc": "", "stickers": {"U": "XXXXXXXXX", "F": "XXXBBRBBD", "R": "XXXBRRBRR"}},
+      {"id": "advanced-41", "name": "Advanced 41", "group": "Edge and Corner in Place", "alg": "(R U R' U') (R U' R') U2 y' (R' U' R)", "alternatives": [], "slot": "FR", "source": "Advanced F2L.pdf", "page": 2, "desc": "", "stickers": {"U": "XXXXXXXXX", "F": "XXXBBRBBR", "R": "XXXBRRDRR"}},
+      {"id": "advanced-42", "name": "Advanced 42", "group": "Basic Inserts", "alg": "y U (R U' R')", "alternatives": ["y' U (L U' L')"], "slot": "BR", "source": "Advanced F2L.pdf", "page": 3, "desc": "", "stickers": {"U": "XRRXXXXXX", "F": "XXXBBBBBB", "R": "XXDRRXRRX"}},
+      {"id": "advanced-43", "name": "Advanced 43", "group": "Basic Inserts", "alg": "U' (R' U R)", "alternatives": [], "slot": "BR", "source": "Advanced F2L.pdf", "page": 3, "desc": "", "stickers": {"U": "XXRXXRXXX", "F": "XXXLLLLLL", "R": "XBBBBXBBX"}},
+      {"id": "advanced-44", "name": "Advanced 44", "group": "Basic Inserts", "alg": "(R' U' R)", "alternatives": [], "slot": "BR", "source": "Advanced F2L.pdf", "page": 3, "desc": "", "stickers": {"U": "XXBXXXXRX", "F": "XBXLLLLLL", "R": "XXDBBXBBX"}},
+      {"id": "advanced-45", "name": "Advanced 45", "group": "Basic Inserts", "alg": "y (R U R')", "alternatives": ["y' (L U L')"], "slot": "BR", "source": "Advanced F2L.pdf", "page": 3, "desc": "", "stickers": {"U": "XXFRXXXXX", "F": "XXXBBBBBB", "R": "XXRRRXRRX"}},
+      {"id": "advanced-46", "name": "Advanced 46", "group": "F2L Case 1", "alg": "U (R' U' R U') (R' U' R)", "alternatives": [], "slot": "BR", "source": "Advanced F2L.pdf", "page": 3, "desc": "", "stickers": {"U": "XXBRXXXXX", "F": "XXXLLLLLL", "R": "XXDBBXBBX"}},
+      {"id": "advanced-47", "name": "Advanced 47", "group": "F2L Case 1", "alg": "U (R' U R U') y (R U R')", "alternatives": [], "slot": "BR", "source": "Advanced F2L.pdf", "page": 3, "desc": "", "stickers": {"U": "XXFXXXXRX", "F": "XFXBBBBBB", "R": "XXRRRXRRX"}},
+      {"id": "advanced-48", "name": "Advanced 48", "group": "F2L Case 1", "alg": "R U2' R2' U' (R2 U' R')", "alternatives": [], "slot": "BR", "source": "Advanced F2L.pdf", "page": 3, "desc": "", "stickers": {"U": "XRBXXXXXX", "F": "XXXLLLLLL", "R": "XXDBBXBBX"}},
+      {"id": "advanced-49", "name": "Advanced 49", "group": "F2L Case 1", "alg": "U (R' U2 R) U' y (R U R')", "alternatives": [], "slot": "BR", "source": "Advanced F2L.pdf", "page": 3, "desc": "", "stickers": {"U": "XXFXXRXXX", "F": "XXXBBBBBB", "R": "XFRRRXRRX"}},
+      {"id": "advanced-50", "name": "Advanced 50", "group": "F2L Case 1", "alg": "U (R' U R U') (R' U' R)", "alternatives": [], "slot": "BR", "source": "Advanced F2L.pdf", "page": 3, "desc": "", "stickers": {"U": "XXBXXRXXX", "F": "XXXLLLLLL", "R": "XBDBBXBBX"}},
+      {"id": "advanced-51", "name": "Advanced 51", "group": "F2L Case 1", "alg": "y U' (R U' R' U) (R U R')", "alternatives": [], "slot": "BR", "source": "Advanced F2L.pdf", "page": 3, "desc": "", "stickers": {"U": "XRFXXXXXX", "F": "XXXBBBBBB", "R": "XXRRRXRRX"}},
+      {"id": "advanced-52", "name": "Advanced 52", "group": "F2L Case 2", "alg": "y (U' R U R') U2 (R U' R')", "alternatives": ["U r' (U R U' R') U' r"], "slot": "BR", "source": "Advanced F2L.pdf", "page": 3, "desc": "", "stickers": {"U": "XXRRXXXXX", "F": "XXXBBBBBB", "R": "XXDRRXRRX"}},
+      {"id": "advanced-53", "name": "Advanced 53", "group": "F2L Case 2", "alg": "(U R' U' R) U2' (R' U R)", "alternatives": [], "slot": "BR", "source": "Advanced F2L.pdf", "page": 3, "desc": "", "stickers": {"U": "XXRXXXXRX", "F": "XBXLLLLLL", "R": "XXBBBXBBX"}},
+      {"id": "advanced-54", "name": "Advanced 54", "group": "F2L Case 2", "alg": "y U' (R U2' R') U2 (R U' R')", "alternatives": [], "slot": "BR", "source": "Advanced F2L.pdf", "page": 3, "desc": "", "stickers": {"U": "XXRXXXXRX", "F": "XFXBBBBBB", "R": "XXDRRXRRX"}},
+      {"id": "advanced-55", "name": "Advanced 55", "group": "F2L Case 2", "alg": "U (R' U2 R) U2' (R' U R)", "alternatives": [], "slot": "BR", "source": "Advanced F2L.pdf", "page": 3, "desc": "", "stickers": {"U": "XXRRXXXXX", "F": "XXXLLLLLL", "R": "XXBBBXBBX"}},
+      {"id": "advanced-56", "name": "Advanced 56", "group": "F2L Case 3", "alg": "y U (R U2' R') U (R U' R')", "alternatives": [], "slot": "BR", "source": "Advanced F2L.pdf", "page": 3, "desc": "", "stickers": {"U": "XXDRXXXXX", "F": "XXXBBBBBB", "R": "XXFRRXRRX"}},
+      {"id": "advanced-57", "name": "Advanced 57", "group": "F2L Case 3", "alg": "U' (R' U2 R) U' (R' U R)", "alternatives": [], "slot": "BR", "source": "Advanced F2L.pdf", "page": 3, "desc": "", "stickers": {"U": "XXDXXXXRX", "F": "XBXLLLLLL", "R": "XXRBBXBBX"}},
+      {"id": "advanced-58", "name": "Advanced 58", "group": "F2L Case 3", "alg": "y U2 (R U R' U) (R U' R')", "alternatives": [], "slot": "BR", "source": "Advanced F2L.pdf", "page": 3, "desc": "", "stickers": {"U": "XXDXXXXRX", "F": "XFXBBBBBB", "R": "XXFRRXRRX"}},
+      {"id": "advanced-59", "name": "Advanced 59", "group": "F2L Case 3", "alg": "U2 (R' U' R) U' (R' U R)", "alternatives": ["R' F' U2 F R"], "slot": "BR", "source": "Advanced F2L.pdf", "page": 3, "desc": "Note – The second algorithm is fewer moves, but less intuitive and less finger-friendly.", "stickers": {"U": "XXDRXXXXX", "F": "XXXLLLLLL", "R": "XXRBBXBBX"}},
+      {"id": "advanced-60", "name": "Advanced 60", "group": "Incorrectly Connected Pieces", "alg": "(R' U R) U2' y (R U R')", "alternatives": ["(R2' F R F' R) U2' (R' U R)"], "slot": "BR", "source": "Advanced F2L.pdf", "page": 4, "desc": "", "stickers": {"U": "XXRXXRXXX", "F": "XXXBBBBBB", "R": "XFDRRXRRX"}},
+      {"id": "advanced-61", "name": "Advanced 61", "group": "Incorrectly Connected Pieces", "alg": "y (R U' R' U2) y' (R' U' R)", "alternatives": ["U (R U' R' U) (R' U' R)"], "slot": "BR", "source": "Advanced F2L.pdf", "page": 4, "desc": "Note – the second algorithm should only be used when the front-right slot is empty.", "stickers": {"U": "XRRXXXXXX", "F": "XXXLLLLLL", "R": "XXBBBXBBX"}},
+      {"id": "advanced-62", "name": "Advanced 62", "group": "Incorrectly Connected Pieces", "alg": "y (R U2 R') U' (R U R')", "alternatives": [], "slot": "BR", "source": "Advanced F2L.pdf", "page": 4, "desc": "", "stickers": {"U": "XRDXXXXXX", "F": "XXXBBBBBB", "R": "XXFRRXRRX"}},
+      {"id": "advanced-63", "name": "Advanced 63", "group": "Incorrectly Connected Pieces", "alg": "(R' U2' R) U (R' U' R)", "alternatives": [], "slot": "BR", "source": "Advanced F2L.pdf", "page": 4, "desc": "", "stickers": {"U": "XXDXXRXXX", "F": "XXXLLLLLL", "R": "XBRBBXBBX"}},
+      {"id": "advanced-64", "name": "Advanced 64", "group": "Incorrectly Connected Pieces", "alg": "(R' U' R U' y) (R U' R' U) (R U' R')", "alternatives": ["(U R' U2' R) y (R U2' R' U) (R U' R')"], "slot": "BR", "source": "Advanced F2L.pdf", "page": 4, "desc": "", "stickers": {"U": "XXDXXRXXX", "F": "XXXBBBBBB", "R": "XFFRRXRRX"}},
+      {"id": "advanced-65", "name": "Advanced 65", "group": "Incorrectly Connected Pieces", "alg": "U' (R' U R U) (R' U R U') (R' U R)", "alternatives": ["y F (U R U' R') F' (R U' R')"], "slot": "BR", "source": "Advanced F2L.pdf", "page": 4, "desc": "", "stickers": {"U": "XRDXXXXXX", "F": "XXXLLLLLL", "R": "XXRBBXBBX"}},
+      {"id": "advanced-66", "name": "Advanced 66", "group": "Corner in Place, Edge in U Face", "alg": "(U' R' U R) y U (R U' R')", "alternatives": [], "slot": "BR", "source": "Advanced F2L.pdf", "page": 4, "desc": "", "stickers": {"U": "XRXXXXXXX", "F": "XXXBBBBBB", "R": "XXXRRXRRR"}},
+      {"id": "advanced-67", "name": "Advanced 67", "group": "Corner in Place, Edge in U Face", "alg": "y U (R U' R') U' (F' U F)", "alternatives": ["y U (R U' R') (F R' F' R)"], "slot": "BR", "source": "Advanced F2L.pdf", "page": 4, "desc": "", "stickers": {"U": "XXXXXRXXX", "F": "XXXLLLLLL", "R": "XBXBBXBBB"}},
+      {"id": "advanced-68", "name": "Advanced 68", "group": "Corner in Place, Edge in U Face", "alg": "y (R U' R' U) (R U' R')", "alternatives": ["R' U2 R' F R F' R"], "slot": "BR", "source": "Advanced F2L.pdf", "page": 4, "desc": "", "stickers": {"U": "XRXXXXXXX", "F": "XXXBBBBBB", "R": "XXXRRXRRD"}},
+      {"id": "advanced-69", "name": "Advanced 69", "group": "Corner in Place, Edge in U Face", "alg": "(R' U R U') (R' U R)", "alternatives": [], "slot": "BR", "source": "Advanced F2L.pdf", "page": 4, "desc": "", "stickers": {"U": "XXXXXRXXX", "F": "XXXLLLLLL", "R": "XBXBBXBBR"}},
+      {"id": "advanced-70", "name": "Advanced 70", "group": "Corner in Place, Edge in U Face", "alg": "(R' U' R U) (R' U' R)", "alternatives": [], "slot": "BR", "source": "Advanced F2L.pdf", "page": 4, "desc": "", "stickers": {"U": "XXXXXRXXX", "F": "XXXLLLLLL", "R": "XBXBBXBBD"}},
+      {"id": "advanced-71", "name": "Advanced 71", "group": "Corner in Place, Edge in U Face", "alg": "y (R U R' U') (R U R')", "alternatives": [], "slot": "BR", "source": "Advanced F2L.pdf", "page": 4, "desc": "", "stickers": {"U": "XRXXXXXXX", "F": "XXXBBBBBB", "R": "XXXRRXRRF"}},
+      {"id": "advanced-72", "name": "Advanced 72", "group": "Edge in Place, Corner in U face", "alg": "(R' U R' F) (R F' R)", "alternatives": ["(R' U R U') y (R U' R')"], "slot": "BR", "source": "Advanced F2L.pdf", "page": 4, "desc": "", "stickers": {"U": "XXDXXXXXX", "F": "XXXLLLLLL", "R": "XXRBBRBBX"}},
+      {"id": "advanced-73", "name": "Advanced 73", "group": "Edge in Place, Corner in U face", "alg": "(U' R' U R) (U' R' U R) (U' R' U R)", "alternatives": [], "slot": "BR", "source": "Advanced F2L.pdf", "page": 4, "desc": "", "stickers": {"U": "XXDXXXXXX", "F": "XXXBBBBBB", "R": "XXFRRRRRX"}},
+      {"id": "advanced-74", "name": "Advanced 74", "group": "Edge in Place, Corner in U face", "alg": "(U' R' U' R) U2 (R' U' R)", "alternatives": [], "slot": "BR", "source": "Advanced F2L.pdf", "page": 4, "desc": "", "stickers": {"U": "XXRXXXXXX", "F": "XXXBBBBBB", "R": "XXDRRRRRX"}},
+      {"id": "advanced-75", "name": "Advanced 75", "group": "Edge in Place, Corner in U face", "alg": "U (R' U R) U2' (R' U R)", "alternatives": [], "slot": "BR", "source": "Advanced F2L.pdf", "page": 4, "desc": "", "stickers": {"U": "XXFXXXXXX", "F": "XXXBBBBBB", "R": "XXRRRRRRX"}},
+      {"id": "advanced-76", "name": "Advanced 76", "group": "Edge in Place, Corner in U face", "alg": "y (U' R U R') d (R' U' R)", "alternatives": [], "slot": "BR", "source": "Advanced F2L.pdf", "page": 4, "desc": "", "stickers": {"U": "XXBXXXXXX", "F": "XXXLLLLLL", "R": "XXDBBRBBX"}},
+      {"id": "advanced-77", "name": "Advanced 77", "group": "Edge in Place, Corner in U face", "alg": "U (R' U' R) y U' (R U R')", "alternatives": [], "slot": "BR", "source": "Advanced F2L.pdf", "page": 4, "desc": "", "stickers": {"U": "XXRXXXXXX", "F": "XXXLLLLLL", "R": "XXBBBRBBX"}},
+      {"id": "advanced-78", "name": "Advanced 78", "group": "Edge and Corner in Place", "alg": "(R' U R) d' (R U2' R') U2 (R U' R')", "alternatives": [], "slot": "BR", "source": "Advanced F2L.pdf", "page": 4, "desc": "", "stickers": {"U": "XXXXXXXXX", "F": "XXXLLLLLL", "R": "XXXBBRBBB"}},
+      {"id": "advanced-79", "name": "Advanced 79", "group": "Edge and Corner in Place", "alg": "(R' U R U') (R' U2 R U') (R' U R)", "alternatives": [], "slot": "BR", "source": "Advanced F2L.pdf", "page": 4, "desc": "", "stickers": {"U": "XXXXXXXXX", "F": "XXXBBBBBB", "R": "XXXRRRRRD"}},
+      {"id": "advanced-80", "name": "Advanced 80", "group": "Edge and Corner in Place", "alg": "(R' U' R U) (R' U2' R) U (R' U' R)", "alternatives": ["(R' U R U) (R' U' R U2') (R' U R)"], "slot": "BR", "source": "Advanced F2L.pdf", "page": 4, "desc": "", "stickers": {"U": "XXXXXXXXX", "F": "XXXBBBBBB", "R": "XXXRRRRRF"}},
+      {"id": "advanced-81", "name": "Advanced 81", "group": "Edge and Corner in Place", "alg": "(R' U R) U2' y (R U R' U) (R U' R')", "alternatives": [], "slot": "BR", "source": "Advanced F2L.pdf", "page": 4, "desc": "", "stickers": {"U": "XXXXXXXXX", "F": "XXXLLLLLL", "R": "XXXBBRBBD"}},
+      {"id": "advanced-82", "name": "Advanced 82", "group": "Edge and Corner in Place", "alg": "(R' U R U) (R' U R U') y (R U R')", "alternatives": [], "slot": "BR", "source": "Advanced F2L.pdf", "page": 4, "desc": "", "stickers": {"U": "XXXXXXXXX", "F": "XXXLLLLLL", "R": "XXXBBRBBR"}},
+      {"id": "advanced-83", "name": "Advanced 83", "group": "Basic Inserts", "alg": "y' U (R U' R')", "alternatives": ["y U (L U' L')"], "slot": "FL", "source": "Advanced F2L.pdf", "page": 5, "desc": "", "stickers": {"U": "XXXXXXRRX", "F": "FFXXFFXFF", "R": "XXXLLLLLL"}},
+      {"id": "advanced-84", "name": "Advanced 84", "group": "Basic Inserts", "alg": "U' (L' U L)", "alternatives": [], "slot": "FL", "source": "Advanced F2L.pdf", "page": 5, "desc": "", "stickers": {"U": "XXXRXXRXX", "F": "DXXXRRXRR", "R": "XXXFFFFFF"}},
+      {"id": "advanced-85", "name": "Advanced 85", "group": "Basic Inserts", "alg": "(L' U' L)", "alternatives": [], "slot": "FL", "source": "Advanced F2L.pdf", "page": 5, "desc": "", "stickers": {"U": "XRXXXXBXX", "F": "RXXXRRXRR", "R": "XXXFFFFFF"}},
+      {"id": "advanced-86", "name": "Advanced 86", "group": "Basic Inserts", "alg": "y' (R U R')", "alternatives": ["y (L U L')"], "slot": "FL", "source": "Advanced F2L.pdf", "page": 5, "desc": "", "stickers": {"U": "XXXXXRFXX", "F": "DXXXFFXFF", "R": "XFXLLLLLL"}},
+      {"id": "advanced-87", "name": "Advanced 87", "group": "F2L Case 1", "alg": "U (L' U' L U') (L' U' L)", "alternatives": [], "slot": "FL", "source": "Advanced F2L.pdf", "page": 5, "desc": "", "stickers": {"U": "XXXXXRBXX", "F": "RXXXRRXRR", "R": "XBXFFFFFF"}},
+      {"id": "advanced-88", "name": "Advanced 88", "group": "F2L Case 1", "alg": "U (L' U L U') y' (R U R')", "alternatives": [], "slot": "FL", "source": "Advanced F2L.pdf", "page": 5, "desc": "", "stickers": {"U": "XRXXXXFXX", "F": "DXXXFFXFF", "R": "XXXLLLLLL"}},
+      {"id": "advanced-89", "name": "Advanced 89", "group": "F2L Case 1", "alg": "L U2' L2' U' (L2 U' L')", "alternatives": [], "slot": "FL", "source": "Advanced F2L.pdf", "page": 5, "desc": "", "stickers": {"U": "XXXXXXBRX", "F": "RBXXRRXRR", "R": "XXXFFFFFF"}},
+      {"id": "advanced-90", "name": "Advanced 90", "group": "F2L Case 1", "alg": "U (L' U2 L) U' y' (R U R')", "alternatives": [], "slot": "FL", "source": "Advanced F2L.pdf", "page": 5, "desc": "", "stickers": {"U": "XXXRXXFXX", "F": "DXXXFFXFF", "R": "XXXLLLLLL"}},
+      {"id": "advanced-91", "name": "Advanced 91", "group": "F2L Case 1", "alg": "U (L' U L U') (L' U' L)", "alternatives": [], "slot": "FL", "source": "Advanced F2L.pdf", "page": 5, "desc": "", "stickers": {"U": "XXXRXXBXX", "F": "RXXXRRXRR", "R": "XXXFFFFFF"}},
+      {"id": "advanced-92", "name": "Advanced 92", "group": "F2L Case 1", "alg": "y' U' (R U' R' U) (R U R')", "alternatives": [], "slot": "FL", "source": "Advanced F2L.pdf", "page": 5, "desc": "", "stickers": {"U": "XXXXXXFRX", "F": "DFXXFFXFF", "R": "XXXLLLLLL"}},
+      {"id": "advanced-93", "name": "Advanced 93", "group": "F2L Case 2", "alg": "y' (U' R U R') U2 (R U' R')", "alternatives": ["(L U L') y' (U R U' R')"], "slot": "FL", "source": "Advanced F2L.pdf", "page": 5, "desc": "Note – the second algorithm should only be used when the back-left slot is empty.", "stickers": {"U": "XXXXXRRXX", "F": "FXXXFFXFF", "R": "XFXLLLLLL"}},
+      {"id": "advanced-94", "name": "Advanced 94", "group": "F2L Case 2", "alg": "(U L' U' L) U2' (L' U L)", "alternatives": [], "slot": "FL", "source": "Advanced F2L.pdf", "page": 5, "desc": "", "stickers": {"U": "XRXXXXRXX", "F": "DXXXRRXRR", "R": "XXXFFFFFF"}},
+      {"id": "advanced-95", "name": "Advanced 95", "group": "F2L Case 2", "alg": "y' U' (R U2' R') U2 (R U' R')", "alternatives": [], "slot": "FL", "source": "Advanced F2L.pdf", "page": 5, "desc": "", "stickers": {"U": "XRXXXXRXX", "F": "FXXXFFXFF", "R": "XXXLLLLLL"}},
+      {"id": "advanced-96", "name": "Advanced 96", "group": "F2L Case 2", "alg": "U (L' U2 L) U2' (L' U L)", "alternatives": [], "slot": "FL", "source": "Advanced F2L.pdf", "page": 5, "desc": "", "stickers": {"U": "XXXXXRRXX", "F": "DXXXRRXRR", "R": "XBXFFFFFF"}},
+      {"id": "advanced-97", "name": "Advanced 97", "group": "F2L Case 3", "alg": "y' U (R U2' R') U (R U' R')", "alternatives": [], "slot": "FL", "source": "Advanced F2L.pdf", "page": 5, "desc": "", "stickers": {"U": "XXXXXRDXX", "F": "RXXXFFXFF", "R": "XFXLLLLLL"}},
+      {"id": "advanced-98", "name": "Advanced 98", "group": "F2L Case 3", "alg": "U' (L' U2 L) U' (L' U L)", "alternatives": [], "slot": "FL", "source": "Advanced F2L.pdf", "page": 5, "desc": "", "stickers": {"U": "XRXXXXDXX", "F": "BXXXRRXRR", "R": "XXXFFFFFF"}},
+      {"id": "advanced-99", "name": "Advanced 99", "group": "F2L Case 3", "alg": "F R U2' R' F'", "alternatives": [], "slot": "FL", "source": "Advanced F2L.pdf", "page": 5, "desc": "", "stickers": {"U": "XRXXXXDXX", "F": "RXXXFFXFF", "R": "XXXLLLLLL"}},
+      {"id": "advanced-100", "name": "Advanced 100", "group": "F2L Case 3", "alg": "U2 (L' U' L) U' (L' U L)", "alternatives": [], "slot": "FL", "source": "Advanced F2L.pdf", "page": 5, "desc": "", "stickers": {"U": "XXXXXRDXX", "F": "BXXXRRXRR", "R": "XBXFFFFFF"}},
+      {"id": "advanced-101", "name": "Advanced 101", "group": "Incorrectly Connected Pieces", "alg": "(L' U L) U2' y' (R U R')", "alternatives": [], "slot": "FL", "source": "Advanced F2L.pdf", "page": 6, "desc": "", "stickers": {"U": "XXXRXXRXX", "F": "FXXXFFXFF", "R": "XXXLLLLLL"}},
+      {"id": "advanced-102", "name": "Advanced 102", "group": "Incorrectly Connected Pieces", "alg": "y' (R U' R' U2) y' (R' U' R)", "alternatives": ["(U' R U' R') U' (L' U' L)"], "slot": "FL", "source": "Advanced F2L.pdf", "page": 6, "desc": "Note – the second algorithm should only be used when the front-right slot is empty.", "stickers": {"U": "XXXXXXRRX", "F": "DBXXRRXRR", "R": "XXXFFFFFF"}},
+      {"id": "advanced-103", "name": "Advanced 103", "group": "Incorrectly Connected Pieces", "alg": "y' (R U2 R') U' (R U R')", "alternatives": [], "slot": "FL", "source": "Advanced F2L.pdf", "page": 6, "desc": "", "stickers": {"U": "XXXXXXDRX", "F": "RFXXFFXFF", "R": "XXXLLLLLL"}},
+      {"id": "advanced-104", "name": "Advanced 104", "group": "Incorrectly Connected Pieces", "alg": "(L' U2 L) U (L' U' L)", "alternatives": [], "slot": "FL", "source": "Advanced F2L.pdf", "page": 6, "desc": "", "stickers": {"U": "XXXRXXDXX", "F": "BXXXRRXRR", "R": "XXXFFFFFF"}},
+      {"id": "advanced-105", "name": "Advanced 105", "group": "Incorrectly Connected Pieces", "alg": "y' U (R U' R' U') (R U' R' U R U' R')", "alternatives": ["y' (R U R' U2') (R U R' U') (R U R')"], "slot": "FL", "source": "Advanced F2L.pdf", "page": 6, "desc": "", "stickers": {"U": "XXXRXXDXX", "F": "RXXXFFXFF", "R": "XXXLLLLLL"}},
+      {"id": "advanced-106", "name": "Advanced 106", "group": "Incorrectly Connected Pieces", "alg": "U' (L' U L U) (L' U L U') (L' U L)", "alternatives": ["y' F (U R U' R') F' (R U' R')"], "slot": "FL", "source": "Advanced F2L.pdf", "page": 6, "desc": "", "stickers": {"U": "XXXXXXDRX", "F": "BBXXRRXRR", "R": "XXXFFFFFF"}},
+      {"id": "advanced-107", "name": "Advanced 107", "group": "Corner in Place, Edge in U Face", "alg": "(U' L' U L) d (R U' R')", "alternatives": [], "slot": "FL", "source": "Advanced F2L.pdf", "page": 6, "desc": "", "stickers": {"U": "XXXXXXXRX", "F": "XFXXFFFFF", "R": "XXXLLLLLL"}},
+      {"id": "advanced-108", "name": "Advanced 108", "group": "Corner in Place, Edge in U Face", "alg": "y' U (R U' R') U' (F' U F)", "alternatives": ["y' U (R U' R') (F R' F' R)"], "slot": "FL", "source": "Advanced F2L.pdf", "page": 6, "desc": "", "stickers": {"U": "XXXRXXXXX", "F": "XXXXRRRRR", "R": "XXXFFFFFF"}},
+      {"id": "advanced-109", "name": "Advanced 109", "group": "Corner in Place, Edge in U Face", "alg": "y' (R U' R' U) (R U' R')", "alternatives": [], "slot": "FL", "source": "Advanced F2L.pdf", "page": 6, "desc": "", "stickers": {"U": "XXXXXXXRX", "F": "XFXXFFRFF", "R": "XXXLLLLLL"}},
+      {"id": "advanced-110", "name": "Advanced 110", "group": "Corner in Place, Edge in U Face", "alg": "(L' U L U') (L' U L)", "alternatives": [], "slot": "FL", "source": "Advanced F2L.pdf", "page": 6, "desc": "", "stickers": {"U": "XXXRXXXXX", "F": "XXXXRRDRR", "R": "XXXFFFFFF"}},
+      {"id": "advanced-111", "name": "Advanced 111", "group": "Corner in Place, Edge in U Face", "alg": "(L' U' L U) (L' U' L)", "alternatives": [], "slot": "FL", "source": "Advanced F2L.pdf", "page": 6, "desc": "", "stickers": {"U": "XXXRXXXXX", "F": "XXXXRRBRR", "R": "XXXFFFFFF"}},
+      {"id": "advanced-112", "name": "Advanced 112", "group": "Corner in Place, Edge in U Face", "alg": "y' (R U R' U') (R U R')", "alternatives": ["(r U' r' F) (r U' r' F)"], "slot": "FL", "source": "Advanced F2L.pdf", "page": 6, "desc": "", "stickers": {"U": "XXXXXXXRX", "F": "XFXXFFDFF", "R": "XXXLLLLLL"}},
+      {"id": "advanced-113", "name": "Advanced 113", "group": "Edge in Place, Corner in U face", "alg": "(L' U L U') y' (R U' R')", "alternatives": [], "slot": "FL", "source": "Advanced F2L.pdf", "page": 6, "desc": "", "stickers": {"U": "XXXXXXDXX", "F": "BXXBRRXRR", "R": "XXXFFFFFF"}},
+      {"id": "advanced-114", "name": "Advanced 114", "group": "Edge in Place, Corner in U face", "alg": "(U' L' U L) (U' L' U L) (U' L' U L)", "alternatives": [], "slot": "FL", "source": "Advanced F2L.pdf", "page": 6, "desc": "", "stickers": {"U": "XXXXXXDXX", "F": "RXXFFFXFF", "R": "XXXLLLLLL"}},
+      {"id": "advanced-115", "name": "Advanced 115", "group": "Edge in Place, Corner in U face", "alg": "(U' L' U' L) U2 (L' U' L)", "alternatives": [], "slot": "FL", "source": "Advanced F2L.pdf", "page": 6, "desc": "", "stickers": {"U": "XXXXXXRXX", "F": "FXXFFFXFF", "R": "XXXLLLLLL"}},
+      {"id": "advanced-116", "name": "Advanced 116", "group": "Edge in Place, Corner in U face", "alg": "U (L' U L) U2' (L' U L)", "alternatives": [], "slot": "FL", "source": "Advanced F2L.pdf", "page": 6, "desc": "", "stickers": {"U": "XXXXXXFXX", "F": "DXXFFFXFF", "R": "XXXLLLLLL"}},
+      {"id": "advanced-117", "name": "Advanced 117", "group": "Edge in Place, Corner in U face", "alg": "y' (U' R U R') d (R' U' R)", "alternatives": [], "slot": "FL", "source": "Advanced F2L.pdf", "page": 6, "desc": "", "stickers": {"U": "XXXXXXBXX", "F": "RXXBRRXRR", "R": "XXXFFFFFF"}},
+      {"id": "advanced-118", "name": "Advanced 118", "group": "Edge in Place, Corner in U face", "alg": "U (L' U' L) y' U' (R U R')", "alternatives": [], "slot": "FL", "source": "Advanced F2L.pdf", "page": 6, "desc": "", "stickers": {"U": "XXXXXXRXX", "F": "DXXBRRXRR", "R": "XXXFFFFFF"}},
+      {"id": "advanced-119", "name": "Advanced 119", "group": "Edge and Corner in Place", "alg": "(L' U L U') y' (R U2' R' U2 R U' R')", "alternatives": [], "slot": "FL", "source": "Advanced F2L.pdf", "page": 6, "desc": "", "stickers": {"U": "XXXXXXXXX", "F": "XXXBRRRRR", "R": "XXXFFFFFF"}},
+      {"id": "advanced-120", "name": "Advanced 120", "group": "Edge and Corner in Place", "alg": "(L' U L U') (L' U2 L U') (L' U L)", "alternatives": [], "slot": "FL", "source": "Advanced F2L.pdf", "page": 6, "desc": "", "stickers": {"U": "XXXXXXXXX", "F": "XXXFFFRFF", "R": "XXXLLLLLL"}},
+      {"id": "advanced-121", "name": "Advanced 121", "group": "Edge and Corner in Place", "alg": "(L' U' L U) (L' U2' L) U (L' U' L)", "alternatives": ["(L' U L U) (L' U' L U2') (L' U L)"], "slot": "FL", "source": "Advanced F2L.pdf", "page": 6, "desc": "", "stickers": {"U": "XXXXXXXXX", "F": "XXXFFFDFF", "R": "XXXLLLLLL"}},
+      {"id": "advanced-122", "name": "Advanced 122", "group": "Edge and Corner in Place", "alg": "(L' U L) F R U2' R' F'", "alternatives": [], "slot": "FL", "source": "Advanced F2L.pdf", "page": 6, "desc": "", "stickers": {"U": "XXXXXXXXX", "F": "XXXBRRBRR", "R": "XXXFFFFFF"}},
+      {"id": "advanced-123", "name": "Advanced 123", "group": "Edge and Corner in Place", "alg": "(L' U L U) (L' U L U') y (L U L')", "alternatives": [], "slot": "FL", "source": "Advanced F2L.pdf", "page": 6, "desc": "", "stickers": {"U": "XXXXXXXXX", "F": "XXXBRRDRR", "R": "XXXFFFFFF"}},
+      {"id": "advanced-124", "name": "Advanced 124", "group": "Basic Inserts", "alg": "U (L U' L')", "alternatives": [], "slot": "BL", "source": "Advanced F2L.pdf", "page": 7, "desc": "", "stickers": {"U": "RXXRXXXXX", "F": "XXXLLLLLL", "R": "XXXBBBBBB"}},
+      {"id": "advanced-125", "name": "Advanced 125", "group": "Basic Inserts", "alg": "y U' (R' U R)", "alternatives": ["y' U' (L' U L)"], "slot": "BL", "source": "Advanced F2L.pdf", "page": 7, "desc": "", "stickers": {"U": "RRXXXXXXX", "F": "XXXFFFFFF", "R": "XXXLLLLLL"}},
+      {"id": "advanced-126", "name": "Advanced 126", "group": "Basic Inserts", "alg": "y (R' U' R)", "alternatives": [], "slot": "BL", "source": "Advanced F2L.pdf", "page": 7, "desc": "", "stickers": {"U": "BXXXXRXXX", "F": "XXXFFFFFF", "R": "XBXLLLLLL"}},
+      {"id": "advanced-127", "name": "Advanced 127", "group": "Basic Inserts", "alg": "(L U L')", "alternatives": [], "slot": "BL", "source": "Advanced F2L.pdf", "page": 7, "desc": "", "stickers": {"U": "FXXXXXXRX", "F": "XFXLLLLLL", "R": "XXXBBBBBB"}},
+      {"id": "advanced-128", "name": "Advanced 128", "group": "F2L Case 1", "alg": "y U (R' U' R U') (R' U' R)", "alternatives": [], "slot": "BL", "source": "Advanced F2L.pdf", "page": 7, "desc": "", "stickers": {"U": "BXXXXXXRX", "F": "XBXFFFFFF", "R": "XXXLLLLLL"}},
+      {"id": "advanced-129", "name": "Advanced 129", "group": "F2L Case 1", "alg": "U' (L U L' U) (L U L')", "alternatives": [], "slot": "BL", "source": "Advanced F2L.pdf", "page": 7, "desc": "", "stickers": {"U": "FXXXXRXXX", "F": "XXXLLLLLL", "R": "XFXBBBBBB"}},
+      {"id": "advanced-130", "name": "Advanced 130", "group": "F2L Case 1", "alg": "y R U2' R2' U' (R2 U' R')", "alternatives": [], "slot": "BL", "source": "Advanced F2L.pdf", "page": 7, "desc": "", "stickers": {"U": "BXXRXXXXX", "F": "XXXFFFFFF", "R": "XXXLLLLLL"}},
+      {"id": "advanced-131", "name": "Advanced 131", "group": "F2L Case 1", "alg": "L' U2 L2 U (L2' U L)", "alternatives": [], "slot": "BL", "source": "Advanced F2L.pdf", "page": 7, "desc": "", "stickers": {"U": "FRXXXXXXX", "F": "XXXLLLLLL", "R": "XXXBBBBBB"}},
+      {"id": "advanced-132", "name": "Advanced 132", "group": "F2L Case 1", "alg": "y U (R' U R U') (R' U' R)", "alternatives": [], "slot": "BL", "source": "Advanced F2L.pdf", "page": 7, "desc": "", "stickers": {"U": "BRXXXXXXX", "F": "XXXFFFFFF", "R": "XXXLLLLLL"}},
+      {"id": "advanced-133", "name": "Advanced 133", "group": "F2L Case 1", "alg": "U' (L U' L' U) (L U L')", "alternatives": [], "slot": "BL", "source": "Advanced F2L.pdf", "page": 7, "desc": "", "stickers": {"U": "FXXRXXXXX", "F": "XXXLLLLLL", "R": "XXXBBBBBB"}},
+      {"id": "advanced-134", "name": "Advanced 134", "group": "F2L Case 2", "alg": "(U' L U L') U2 (L U' L')", "alternatives": [], "slot": "BL", "source": "Advanced F2L.pdf", "page": 7, "desc": "", "stickers": {"U": "RXXXXXXRX", "F": "XFXLLLLLL", "R": "XXXBBBBBB"}},
+      {"id": "advanced-135", "name": "Advanced 135", "group": "F2L Case 2", "alg": "y (U R' U' R) U2' (R' U R)", "alternatives": [], "slot": "BL", "source": "Advanced F2L.pdf", "page": 7, "desc": "", "stickers": {"U": "RXXXXRXXX", "F": "XXXFFFFFF", "R": "XBXLLLLLL"}},
+      {"id": "advanced-136", "name": "Advanced 136", "group": "F2L Case 2", "alg": "U' (L U2 L') U2 (L U' L')", "alternatives": [], "slot": "BL", "source": "Advanced F2L.pdf", "page": 7, "desc": "", "stickers": {"U": "RXXXXRXXX", "F": "XXXLLLLLL", "R": "XFXBBBBBB"}},
+      {"id": "advanced-137", "name": "Advanced 137", "group": "F2L Case 2", "alg": "y U (R' U2' R) U2' (R' U R)", "alternatives": [], "slot": "BL", "source": "Advanced F2L.pdf", "page": 7, "desc": "", "stickers": {"U": "RXXXXXXRX", "F": "XBXFFFFFF", "R": "XXXLLLLLL"}},
+      {"id": "advanced-138", "name": "Advanced 138", "group": "F2L Case 3", "alg": "U (L U2' L') U (L U' L')", "alternatives": [], "slot": "BL", "source": "Advanced F2L.pdf", "page": 7, "desc": "", "stickers": {"U": "DXXXXXXRX", "F": "XFXLLLLLL", "R": "XXXBBBBBB"}},
+      {"id": "advanced-139", "name": "Advanced 139", "group": "F2L Case 3", "alg": "y U' (R' U2 R) U' (R' U R)", "alternatives": [], "slot": "BL", "source": "Advanced F2L.pdf", "page": 7, "desc": "", "stickers": {"U": "DXXXXRXXX", "F": "XXXFFFFFF", "R": "XBXLLLLLL"}},
+      {"id": "advanced-140", "name": "Advanced 140", "group": "F2L Case 3", "alg": "y' F R U2' R' F'", "alternatives": [], "slot": "BL", "source": "Advanced F2L.pdf", "page": 7, "desc": "", "stickers": {"U": "DXXXXRXXX", "F": "XXXLLLLLL", "R": "XFXBBBBBB"}},
+      {"id": "advanced-141", "name": "Advanced 141", "group": "F2L Case 3", "alg": "y U2 (R' U' R) U' (R' U R)", "alternatives": ["y R' F' U2 F R"], "slot": "BL", "source": "Advanced F2L.pdf", "page": 7, "desc": "Note – The second algorithm is fewer moves, but less intuitive and less finger-friendly.", "stickers": {"U": "DXXXXXXRX", "F": "XBXFFFFFF", "R": "XXXLLLLLL"}},
+      {"id": "advanced-142", "name": "Advanced 142", "group": "Incorrectly Connected Pieces", "alg": "y (R' U R) U2' y (R U R')", "alternatives": ["U' (L' U L U') (L U' L')"], "slot": "BL", "source": "Advanced F2L.pdf", "page": 8, "desc": "Note – the second algorithm should only be used when the front-left slot is empty.", "stickers": {"U": "RRXXXXXXX", "F": "XXXLLLLLL", "R": "XXXBBBBBB"}},
+      {"id": "advanced-143", "name": "Advanced 143", "group": "Incorrectly Connected Pieces", "alg": "(L U' L' U2) y (R' U' R)", "alternatives": [], "slot": "BL", "source": "Advanced F2L.pdf", "page": 8, "desc": "", "stickers": {"U": "RXXRXXXXX", "F": "XXXFFFFFF", "R": "XXXLLLLLL"}},
+      {"id": "advanced-144", "name": "Advanced 144", "group": "Incorrectly Connected Pieces", "alg": "(L U2 L') U' (L U L')", "alternatives": [], "slot": "BL", "source": "Advanced F2L.pdf", "page": 8, "desc": "", "stickers": {"U": "DXXRXXXXX", "F": "XXXLLLLLL", "R": "XXXBBBBBB"}},
+      {"id": "advanced-145", "name": "Advanced 145", "group": "Incorrectly Connected Pieces", "alg": "y (R' U2' R) U (R' U' R)", "alternatives": [], "slot": "BL", "source": "Advanced F2L.pdf", "page": 8, "desc": "", "stickers": {"U": "DRXXXXXXX", "F": "XXXFFFFFF", "R": "XXXLLLLLL"}},
+      {"id": "advanced-146", "name": "Advanced 146", "group": "Incorrectly Connected Pieces", "alg": "U (L U' L' U') (L U' L' U) (L U' L')", "alternatives": [], "slot": "BL", "source": "Advanced F2L.pdf", "page": 8, "desc": "", "stickers": {"U": "DRXXXXXXX", "F": "XXXLLLLLL", "R": "XXXBBBBBB"}},
+      {"id": "advanced-147", "name": "Advanced 147", "group": "Incorrectly Connected Pieces", "alg": "y U' (R' U R U) (R' U R U') (R' U R)", "alternatives": [], "slot": "BL", "source": "Advanced F2L.pdf", "page": 8, "desc": "", "stickers": {"U": "DXXRXXXXX", "F": "XXXFFFFFF", "R": "XXXLLLLLL"}},
+      {"id": "advanced-148", "name": "Advanced 148", "group": "Corner in Place, Edge in U Face", "alg": "y' (U' L' U L) d (R U' R')", "alternatives": [], "slot": "BL", "source": "Advanced F2L.pdf", "page": 8, "desc": "", "stickers": {"U": "XXXXXRXXX", "F": "XXXRRXRRR", "R": "XFXXFFFFF"}},
+      {"id": "advanced-149", "name": "Advanced 149", "group": "Corner in Place, Edge in U Face", "alg": "U (L U' L') d' (R' U R)", "alternatives": [], "slot": "BL", "source": "Advanced F2L.pdf", "page": 8, "desc": "", "stickers": {"U": "XXXXXXXRX", "F": "XBXBBXBBB", "R": "XXXXRRRRR"}},
+      {"id": "advanced-150", "name": "Advanced 150", "group": "Corner in Place, Edge in U Face", "alg": "(L U' L' U) (L U' L')", "alternatives": [], "slot": "BL", "source": "Advanced F2L.pdf", "page": 8, "desc": "", "stickers": {"U": "XXXXXRXXX", "F": "XXXRRXRRD", "R": "XFXXFFRFF"}},
+      {"id": "advanced-151", "name": "Advanced 151", "group": "Corner in Place, Edge in U Face", "alg": "y (R' U R U') (R' U R)", "alternatives": [], "slot": "BL", "source": "Advanced F2L.pdf", "page": 8, "desc": "", "stickers": {"U": "XXXXXXXRX", "F": "XBXBBXBBR", "R": "XXXXRRDRR"}},
+      {"id": "advanced-152", "name": "Advanced 152", "group": "Corner in Place, Edge in U Face", "alg": "y (R' U' R U) (R' U' R)", "alternatives": [], "slot": "BL", "source": "Advanced F2L.pdf", "page": 8, "desc": "", "stickers": {"U": "XXXXXXXRX", "F": "XBXBBXBBD", "R": "XXXXRRBRR"}},
+      {"id": "advanced-153", "name": "Advanced 153", "group": "Corner in Place, Edge in U Face", "alg": "(L U L' U') (L U L')", "alternatives": [], "slot": "BL", "source": "Advanced F2L.pdf", "page": 8, "desc": "", "stickers": {"U": "XXXXXRXXX", "F": "XXXRRXRRF", "R": "XFXXFFDFF"}},
+      {"id": "advanced-154", "name": "Advanced 154", "group": "Edge in Place, Corner in U face", "alg": "y (R' U R' F) (R F' R)", "alternatives": [], "slot": "BL", "source": "Advanced F2L.pdf", "page": 8, "desc": "", "stickers": {"U": "XXXXXXXXD", "F": "XXRBBRBBX", "R": "BXXBRRXRR"}},
+      {"id": "advanced-155", "name": "Advanced 155", "group": "Edge in Place, Corner in U face", "alg": "(U L U' L') (U L U' L') (U L U' L')", "alternatives": [], "slot": "BL", "source": "Advanced F2L.pdf", "page": 8, "desc": "", "stickers": {"U": "XXXXXXXXD", "F": "XXFRRRRRX", "R": "RXXFFFXFF"}},
+      {"id": "advanced-156", "name": "Advanced 156", "group": "Edge in Place, Corner in U face", "alg": "(U' L U' L') U2 (L U' L')", "alternatives": [], "slot": "BL", "source": "Advanced F2L.pdf", "page": 8, "desc": "", "stickers": {"U": "XXXXXXXXR", "F": "XXDRRRRRX", "R": "FXXFFFXFF"}},
+      {"id": "advanced-157", "name": "Advanced 157", "group": "Edge in Place, Corner in U face", "alg": "U (L U L') U2 (L U L')", "alternatives": [], "slot": "BL", "source": "Advanced F2L.pdf", "page": 8, "desc": "", "stickers": {"U": "XXXXXXXXF", "F": "XXRRRRRRX", "R": "DXXFFFXFF"}},
+      {"id": "advanced-158", "name": "Advanced 158", "group": "Edge in Place, Corner in U face", "alg": "(U2' L U L') d' (R' U R)", "alternatives": [], "slot": "BL", "source": "Advanced F2L.pdf", "page": 8, "desc": "", "stickers": {"U": "XXXXXXXXB", "F": "XXDBBRBBX", "R": "RXXBRRXRR"}},
+      {"id": "advanced-159", "name": "Advanced 159", "group": "Edge in Place, Corner in U face", "alg": "y U2' (R' U R) d (L U L')", "alternatives": [], "slot": "BL", "source": "Advanced F2L.pdf", "page": 8, "desc": "", "stickers": {"U": "XXXXXXXXR", "F": "XXBBBRBBX", "R": "DXXBRRXRR"}},
+      {"id": "advanced-160", "name": "Advanced 160", "group": "Edge and Corner in Place", "alg": "y (R' U R) d' (R U2' R' U2 R U' R')", "alternatives": [], "slot": "BL", "source": "Advanced F2L.pdf", "page": 8, "desc": "", "stickers": {"U": "XXXXXXXXX", "F": "XXXBBRBBB", "R": "XXXBRRRRR"}},
+      {"id": "advanced-161", "name": "Advanced 161", "group": "Edge and Corner in Place", "alg": "(L U L' U') (L U2 L' U') (L U L')", "alternatives": [], "slot": "BL", "source": "Advanced F2L.pdf", "page": 8, "desc": "", "stickers": {"U": "XXXXXXXXX", "F": "XXXRRRRRD", "R": "XXXFFFRFF"}},
+      {"id": "advanced-162", "name": "Advanced 162", "group": "Edge and Corner in Place", "alg": "(L U' L' U) (L U2' L') U (L U' L')", "alternatives": [], "slot": "BL", "source": "Advanced F2L.pdf", "page": 8, "desc": "", "stickers": {"U": "XXXXXXXXX", "F": "XXXRRRRRF", "R": "XXXFFFDFF"}},
+      {"id": "advanced-163", "name": "Advanced 163", "group": "Edge and Corner in Place", "alg": "y (R' U R) U2' y (R U R' U R U' R')", "alternatives": [], "slot": "BL", "source": "Advanced F2L.pdf", "page": 8, "desc": "", "stickers": {"U": "XXXXXXXXX", "F": "XXXBBRBBD", "R": "XXXBRRBRR"}},
+      {"id": "advanced-164", "name": "Advanced 164", "group": "Edge and Corner in Place", "alg": "(L U' L') d' (U' R' U' R U') (R' U R)", "alternatives": [], "slot": "BL", "source": "Advanced F2L.pdf", "page": 8, "desc": "", "stickers": {"U": "XXXXXXXXX", "F": "XXXBBRBBR", "R": "XXXBRRDRR"}}
+    ];
 
-      // 3. Cùng màu đỉnh (Same top color - Tất cả 8 case phân biệt)
-      { id: 13, group: 'Cùng màu đỉnh', name: 'F2L 13', alg: "U' (R U2' R') U2 (R U' R')", desc: 'Góc hướng phải, cùng màu' },
-      { id: 14, group: 'Cùng màu đỉnh', name: 'F2L 14', alg: "y' U (R' U2 R) U2 (R' U R)", desc: 'Góc hướng trước, cùng màu' },
-      { id: 15, group: 'Cùng màu đỉnh', name: 'F2L 15', alg: "(R U' R' U2) y' (R' U' R)", desc: 'Cặp dính liền cùng màu' },
-      { id: 16, group: 'Cùng màu đỉnh', name: 'F2L 16', alg: "(R' F R F') (R U R')", desc: 'Dính liền chèn sledgehammer' },
-      { id: 17, group: 'Cùng màu đỉnh', name: 'F2L 17', alg: "(R U R' U2) (R U' R')", desc: 'Góc hướng trước, cạnh đối diện' },
-      { id: 18, group: 'Cùng màu đỉnh', name: 'F2L 18', alg: "y' (R' U' R U2) (R' U R)", desc: 'Góc hướng phải, cạnh đối diện' },
-      { id: 19, group: 'Cùng màu đỉnh', name: 'F2L 19', alg: "(R U2 R') U2 (R U' R')", desc: 'Ghép cặp gián tiếp' },
-      { id: 20, group: 'Cùng màu đỉnh', name: 'F2L 20', alg: "y' (R' U2 R) U2 (R' U R)", desc: 'Ghép cặp gián tiếp bên trái' },
-
-      // 4. Trắng hướng lên trên (White UP)
-      { id: 21, group: 'Trắng hướng lên trên (White UP)', name: 'F2L 21', alg: "(R U2 R') U' (R U R')", desc: 'Cạnh khớp tâm bên phải' },
-      { id: 22, group: 'Trắng hướng lên trên (White UP)', name: 'F2L 22', alg: "y' (R' U2 R) U (R' U' R)", desc: 'Cạnh khớp tâm bên trái' },
-      { id: 23, group: 'Trắng hướng lên trên (White UP)', name: 'F2L 23', alg: "U2 (R U R' U) (R U' R')", desc: 'Tách góc trắng hướng lên' },
-      { id: 24, group: 'Trắng hướng lên trên (White UP)', name: 'F2L 24', alg: "y' U2 (R' U' R U') (R' U R)", desc: 'Tách góc trắng hướng lên bên trái' },
-      { id: 25, group: 'Trắng hướng lên trên (White UP)', name: 'F2L 25', alg: "U (R U2 R') U (R U' R')", desc: 'Xoay góc đưa cạnh về cặp' },
-      { id: 26, group: 'Trắng hướng lên trên (White UP)', name: 'F2L 26', alg: "y' U' (R' U2 R) U' (R' U R)", desc: 'Xoay góc đưa cạnh về cặp bên trái' },
-      { id: 27, group: 'Trắng hướng lên trên (White UP)', name: 'F2L 27', alg: "(R U' R' U2) (R U R')", desc: 'Ghép đôi từ góc đỉnh' },
-      { id: 28, group: 'Trắng hướng lên trên (White UP)', name: 'F2L 28', alg: "y' (R' U R U2) (R' U' R)", desc: 'Ghép đôi từ góc đỉnh bên trái' },
-
-      // 5. Kẹt trong Slot
-      { id: 29, group: 'Kẹt trong Slot', name: 'F2L 29', alg: "(R U' R' U) (R U' R')", desc: 'Cạnh kẹt đúng slot, góc ở U' },
-      { id: 30, group: 'Kẹt trong Slot', name: 'F2L 30', alg: "(R U R' U') (R U R')", desc: 'Cạnh kẹt sai hướng, góc ở U' },
-      { id: 31, group: 'Kẹt trong Slot', name: 'F2L 31', alg: "(R U' R' U') (R U R')", desc: 'Góc kẹt đúng slot, cạnh ở U' },
-      { id: 32, group: 'Kẹt trong Slot', name: 'F2L 32', alg: "(R U R' U) (R U' R')", desc: 'Góc kẹt sai hướng, cạnh ở U' },
-      { id: 33, group: 'Kẹt trong Slot', name: 'F2L 33', alg: "(R U' R') (y' R' U2 R)", desc: 'Trích xuất cạnh kẹt' },
-      { id: 34, group: 'Kẹt trong Slot', name: 'F2L 34', alg: "(R U R') (y' R' U2 R)", desc: 'Trích xuất cạnh kẹt và ghép' },
-      { id: 35, group: 'Kẹt trong Slot', name: 'F2L 35', alg: "(R U' R' U) (y' R' U R)", desc: 'Cả góc và cạnh đều kẹt' },
-      { id: 36, group: 'Kẹt trong Slot', name: 'F2L 36', alg: "(R U R' U') (y' R' U' R)", desc: 'Cả góc và cạnh kẹt sai hướng' },
-      { id: 37, group: 'Kẹt trong Slot', name: 'F2L 37', alg: "(R U' R') d (R' U2 R) (U R' U' R)", desc: 'Đổi hướng góc kẹt' },
-      { id: 38, group: 'Kẹt trong Slot', name: 'F2L 38', alg: "(R U R' U') (R U' R' U2) y' (R' U' R)", desc: 'Đổi hướng cạnh kẹt' },
-      { id: 39, group: 'Kẹt trong Slot', name: 'F2L 39', alg: "(R U' R' U2) y' (R' U R U') (R' U R)", desc: 'Xử lý cặp kẹt đảo góc' },
-      { id: 40, group: 'Kẹt trong Slot', name: 'F2L 40', alg: "(R U R' U') (R U2 R') U (R U' R')", desc: 'Xử lý cặp kẹt đối xứng' },
-      { id: 41, group: 'Kẹt trong Slot', name: 'F2L 41', alg: "(R U' R') (r' U' R U M')", desc: 'Hoán vị cạnh-góc trong slot' }
+    const F2L_USEFUL_CASES = [
+      {"id": "useful-1", "name": "Useful 1", "group": "Edge in different slot, corner oriented", "alg": "R' F R2 U' R' U2 F'", "alternatives": [], "slot": "FL", "source": "Useful F2L.pdf", "page": 1, "desc": "", "stickers": {"U": "XXXXXXDXX", "F": "BXXXRBXRX", "R": "XXXXFXXFX"}},
+      {"id": "useful-2", "name": "Useful 2", "group": "Edge in different slot, corner oriented", "alg": "(R' F R F') (R' U' R)", "alternatives": [], "slot": "BR", "source": "Useful F2L.pdf", "page": 1, "desc": "", "stickers": {"U": "XXXXXXDXX", "F": "BXXXLBXLX", "R": "XXXXBXXBX"}},
+      {"id": "useful-3", "name": "Useful 3", "group": "Edge in different slot, corner oriented", "alg": "F R' U R F'", "alternatives": [], "slot": "FL", "source": "Useful F2L.pdf", "page": 1, "desc": "", "stickers": {"U": "XXDXXXXXX", "F": "XXXXRXXRX", "R": "XXRXFRXFX"}},
+      {"id": "useful-4", "name": "Useful 4", "group": "Edge in different slot, corner oriented", "alg": "R' F U' F' R", "alternatives": [], "slot": "BR", "source": "Useful F2L.pdf", "page": 1, "desc": "", "stickers": {"U": "XXXXXXDXX", "F": "BXXBLXXLX", "R": "XXXXBXXBX"}},
+      {"id": "useful-5", "name": "Useful 5", "group": "Edge in different slot, corner not oriented", "alg": "R' F U F' R", "alternatives": [], "slot": "FL", "source": "Useful F2L.pdf", "page": 1, "desc": "", "stickers": {"U": "XXXXXXRXX", "F": "DXXXRXXRX", "R": "XXXXFRXFX"}},
+      {"id": "useful-6", "name": "Useful 6", "group": "Edge in different slot, corner not oriented", "alg": "F R' U' R F'", "alternatives": [], "slot": "BR", "source": "Useful F2L.pdf", "page": 1, "desc": "", "stickers": {"U": "XXBXXXXXX", "F": "XXXBLXXLX", "R": "XXDXBXXBX"}},
+      {"id": "useful-7", "name": "Useful 7", "group": "Edge in different slot, corner not oriented", "alg": "U R' U' R2 U R2' U' R", "alternatives": [], "slot": "BR", "source": "Useful F2L.pdf", "page": 1, "desc": "", "stickers": {"U": "XXXXXXXXX", "F": "XXBXLRXLX", "R": "XXXXBXXBX"}},
+      {"id": "useful-8", "name": "Useful 8", "group": "Edge in different slot, corner not oriented", "alg": "U' R U R2' U' R2 U R'", "alternatives": [], "slot": "FR", "source": "Useful F2L.pdf", "page": 1, "desc": "", "stickers": {"U": "XXBXXXXXX", "F": "XXXXBXXBX", "R": "XXDXRRXRX"}},
+      {"id": "useful-9", "name": "Useful 9", "group": "Edge in different slot, corner not oriented", "alg": "R' u' R' u R", "alternatives": [], "slot": "FR", "source": "Useful F2L.pdf", "page": 1, "desc": "", "stickers": {"U": "XXXXXXXXX", "F": "XXDRBXXBX", "R": "DXXXRXXRX"}},
+      {"id": "useful-10", "name": "Useful 10", "group": "Edge insertions", "alg": "F' (R U R' U') R' F R", "alternatives": [], "slot": "FR", "source": "Useful F2L.pdf", "page": 1, "desc": "", "stickers": {"U": "XBXXXXXXX", "F": "XXXBBXBBB", "R": "XXXXRRXRR"}},
+      {"id": "useful-11", "name": "Useful 11", "group": "Edge insertions", "alg": "(R' F' R U) (R U' R' F)", "alternatives": [], "slot": "FR", "source": "Useful F2L.pdf", "page": 1, "desc": "", "stickers": {"U": "XXXXXXXXX", "F": "XXXBBXBBB", "R": "XRXXRRXRR"}},
+      {"id": "useful-12", "name": "Useful 12", "group": "Corner solved, edge in slot", "alg": "R2 U' R2' U R2", "alternatives": [], "slot": "FR", "source": "Useful F2L.pdf", "page": 2, "desc": "", "stickers": {"U": "XXXXXXXXX", "F": "XXXLLXLLL", "R": "XXXXBBXBX"}},
+      {"id": "useful-13", "name": "Useful 13", "group": "Corner solved, edge in slot", "alg": "R2 U R2 U' R2'", "alternatives": [], "slot": "BR", "source": "Useful F2L.pdf", "page": 2, "desc": "", "stickers": {"U": "XXXXXXXXX", "F": "XXXBBFBBX", "R": "XXXXRXXRR"}},
+      {"id": "useful-14", "name": "Useful 14", "group": "Miscellaneous", "alg": "F R U' R' U' F'", "alternatives": [], "slot": "FL", "source": "Useful F2L.pdf", "page": 2, "desc": "", "stickers": {"U": "XLXXXXDXX", "F": "LXXXBBXBB", "R": "XXXXRRXRR"}},
+      {"id": "useful-15", "name": "Useful 15", "group": "Miscellaneous", "alg": "r U' R' U R U r'", "alternatives": [], "slot": "FR", "source": "Useful F2L.pdf", "page": 2, "desc": "", "stickers": {"U": "XXRXXXXXX", "F": "XBXBBXBBX", "R": "XXBXRRXRR"}},
+      {"id": "useful-16", "name": "Useful 16", "group": "Miscellaneous", "alg": "M U r U' r' U' M'", "alternatives": [], "slot": "FR", "source": "Useful F2L.pdf", "page": 2, "desc": "", "stickers": {"U": "XXXXXXXXX", "F": "XRDBBXBBX", "R": "XXXXRRXRR"}}
     ];
 
     // ==========================================
@@ -1107,10 +1291,11 @@
       SESSIONS: 'speedcubing_timer_sessions',
       ACTIVE_SESSION: 'speedcubing_timer_active_session_id',
       SETTINGS: 'speedcubing_timer_settings',
-      LEARNED: 'speedcubing_learned_cases_v2'
+      LEARNED: 'speedcubing_learned_cases_v3'
     };
     const DEFAULT_SETTINGS = {
-      theme: 'dark',
+      theme: 'light',
+      appearanceVersion: 2,
       inspection: false,
       inspectionAudio: true,
       holdDelayMs: 300,
@@ -1132,12 +1317,9 @@
           const raw = localStorage.getItem(STORAGE_KEYS.LEARNED);
           if (raw) return JSON.parse(raw);
         } catch (e) {}
-        // Default mastered cases for new cubers
-        const def = {
-          oll: ['21', '22', '26', '27'],
-          pll: ['T', 'Y', 'Ua', 'Ub'],
-          f2l: ['1', '2', '3', '4']
-        };
+        let previous = {};
+        try { previous = JSON.parse(localStorage.getItem('speedcubing_learned_cases_v2') || '{}'); } catch (e) {}
+        const def = { oll: Array.isArray(previous?.oll) ? previous.oll : ['21', '22', '26', '27'], pll: [], f2l: [] };
         this.saveLearned(def);
         return def;
       }
@@ -1168,10 +1350,24 @@
       loadSettings() {
         try {
           const raw = localStorage.getItem(STORAGE_KEYS.SETTINGS);
-          return raw ? { ...DEFAULT_SETTINGS, ...JSON.parse(raw) } : { ...DEFAULT_SETTINGS };
+          const saved = raw ? JSON.parse(raw) : {};
+          const settings = this.normalizeSettings(saved);
+          if (saved?.appearanceVersion !== DEFAULT_SETTINGS.appearanceVersion) {
+            try { localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings)); } catch (e) {}
+          }
+          return settings;
         } catch (e) {
           return { ...DEFAULT_SETTINGS };
         }
+      }
+
+      normalizeSettings(saved) {
+        return {
+          ...DEFAULT_SETTINGS,
+          ...saved,
+          theme: saved?.appearanceVersion === DEFAULT_SETTINGS.appearanceVersion && saved.theme === 'dark' ? 'dark' : 'light',
+          appearanceVersion: DEFAULT_SETTINGS.appearanceVersion
+        };
       }
 
       saveSettings(settings) {
@@ -1302,7 +1498,7 @@
       }
 
       exportToJSON() {
-        return { content: JSON.stringify({ version: '1.0.0', exportedAt: Date.now(), settings: this.settings, sessions: this.sessions, learned: this.learned }, null, 2), filename: `Speedcubing_Backup_${Date.now()}.json` };
+        return { content: JSON.stringify({ version: '1.0.0', learnedRevision: 'pdf-2026-11-03', exportedAt: Date.now(), settings: this.settings, sessions: this.sessions, learned: this.learned }, null, 2), filename: `Speedcubing_Backup_${Date.now()}.json` };
       }
 
       importFromJSON(jsonString) {
@@ -1310,8 +1506,8 @@
           const data = JSON.parse(jsonString);
           if (data && Array.isArray(data.sessions)) {
             this.sessions = data.sessions;
-            if (data.settings) { this.settings = { ...DEFAULT_SETTINGS, ...data.settings }; localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(this.settings)); }
-            if (data.learned) { this.learned = data.learned; localStorage.setItem(STORAGE_KEYS.LEARNED, JSON.stringify(this.learned)); }
+            if (data.settings) { this.settings = this.normalizeSettings(data.settings); localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(this.settings)); }
+            if (data.learned) { this.saveLearned({ oll: Array.isArray(data.learned.oll) ? data.learned.oll : [], pll: data.learnedRevision === 'pdf-2026-11-03' && Array.isArray(data.learned.pll) ? data.learned.pll : [], f2l: data.learnedRevision === 'pdf-2026-11-03' && Array.isArray(data.learned.f2l) ? data.learned.f2l : [] }); }
             this.activeSessionId = this.sessions[0].id;
             this.saveSessions();
             return { success: true, count: this.sessions.length };
@@ -1591,6 +1787,8 @@
       let currentAlgsCat = 'f2l';
       let currentAlgsFilter = 'all';
       let currentAlgsSearch = '';
+      let currentF2lCollection = 'br';
+      const f2lCollections = { br: F2L_41_CASES, advanced: F2L_ADVANCED_CASES, useful: F2L_USEFUL_CASES };
 
       // Drawer & Stats
       const elDrawer = document.getElementById('solves-drawer');
@@ -1625,7 +1823,6 @@
       const elBtnClearSession = document.getElementById('btn-clear-session');
 
       const elThemeBtn = document.getElementById('theme-btn');
-      const elThemeIcon = document.getElementById('theme-icon');
       const elSettingsBtn = document.getElementById('settings-btn');
       const elSettingsModal = document.getElementById('settings-modal');
       const elCloseSettingsBtn = document.getElementById('close-settings-btn');
@@ -1887,7 +2084,7 @@
       }
 
       function updateLearnedBadge() {
-        const total = (storage.learned.oll?.length || 0) + (storage.learned.pll?.length || 0) + (storage.learned.f2l?.length || 0);
+        const total = [[OLL_CASES, 'oll'], [PLL_CASES, 'pll'], [[...F2L_41_CASES, ...F2L_ADVANCED_CASES, ...F2L_USEFUL_CASES], 'f2l']].reduce((count, [items, category]) => count + items.filter(item => storage.isLearned(category, item.id)).length, 0);
         elLearnedTotalBadge.textContent = total;
       }
 
@@ -2182,6 +2379,11 @@
       });
 
       let algsSearchTimeout = null;
+      document.getElementById('f2l-collection').addEventListener('change', (event) => {
+        currentF2lCollection = event.target.value;
+        elMyAlgsCardList.scrollTop = 0;
+        renderMyAlgsView();
+      });
       elAlgsSearchInput.addEventListener('input', (e) => {
         clearTimeout(algsSearchTimeout);
         algsSearchTimeout = setTimeout(() => {
@@ -2192,6 +2394,7 @@
 
       function renderMyAlgsView() {
         elMyAlgsCardList.classList.add('cfop-readable');
+        document.getElementById('f2l-collection-control').hidden = currentAlgsCat !== 'f2l';
         elAlgsCatBtns.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.cat === currentAlgsCat)));
         elAlgsFilterBtns.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.filter === currentAlgsFilter)));
         let items = [];
@@ -2203,8 +2406,8 @@
           items = PLL_CASES;
           catLabel = '21 PLL';
         } else if (currentAlgsCat === 'f2l') {
-          items = F2L_41_CASES;
-          catLabel = '41 Cặp F2L';
+          items = f2lCollections[currentF2lCollection];
+          catLabel = currentF2lCollection === 'br' ? 'F2L BR' : currentF2lCollection === 'advanced' ? 'Advanced F2L' : 'Useful F2L';
         }
 
         // Calculate progress
@@ -2213,7 +2416,7 @@
         const totalCount = items.length;
         const percent = Math.round((learnedCount / totalCount) * 100);
 
-        elAlgsProgressLabel.textContent = `Tiến độ ${catLabel}: ${learnedCount} / ${totalCount} trường hợp`;
+        elAlgsProgressLabel.textContent = `${learnedCount}/${totalCount} đã thuộc`;
         elAlgsProgressPercent.textContent = `${percent}%`;
         elAlgsProgressBar.style.width = `${percent}%`;
         document.querySelector('.library-progress-track').setAttribute('role', 'progressbar');
@@ -2231,13 +2434,14 @@
           if (currentAlgsSearch) {
             const matchName = (it.name || '').toLowerCase().includes(currentAlgsSearch);
             const matchGroup = (it.group || '').toLowerCase().includes(currentAlgsSearch);
-            const matchAlg = (it.alg || '').toLowerCase().includes(currentAlgsSearch);
-            return matchName || matchGroup || matchAlg;
+            const matchAlg = [it.alg, ...(it.alternatives || [])].some(algorithm => (algorithm || '').toLowerCase().includes(currentAlgsSearch));
+            const matchSlot = (it.slot || '').toLowerCase().includes(currentAlgsSearch);
+            return matchName || matchGroup || matchAlg || matchSlot;
           }
           return true;
         });
 
-        document.getElementById('algs-results-summary').textContent = `${filtered.length} / ${items.length} case · ${currentAlgsCat === 'oll' ? 'OLL Wang Yiheng · đã đối chiếu PDF' : 'Hướng cầm ghi ngay dưới hình minh họa'}`;
+        document.getElementById('algs-results-summary').textContent = `${filtered.length} case · ${currentAlgsCat === 'oll' ? 'OLL Wang Yiheng' : currentAlgsCat === 'pll' ? 'PLL Yiheng Wang · Bằng SpeedCuber' : currentF2lCollection === 'br' ? 'Bằng SpeedCuber · slot sau phải' : 'CubeSkills · Feliks Zemdegs'}`;
         if (filtered.length === 0) {
           elMyAlgsCardList.innerHTML = `<div class="library-empty">Không có case phù hợp.<br>Thử từ khóa khác hoặc chọn bộ lọc “Tất cả”.</div>`;
           return;
@@ -2404,14 +2608,17 @@
 
       // Settings & Theme
       function applyTheme(t) {
+        const themeLabel = t === 'light' ? 'Chuyển sang nền tối' : 'Chuyển sang nền sáng';
+        elThemeBtn.setAttribute('aria-label', themeLabel);
+        elThemeBtn.setAttribute('title', themeLabel);
         if (t === 'light') {
           elHtml.classList.remove('dark');
           elHtml.classList.add('light');
-          elThemeIcon.setAttribute('data-lucide', 'moon');
+          document.getElementById('theme-icon').setAttribute('data-lucide', 'moon');
         } else {
           elHtml.classList.remove('light');
           elHtml.classList.add('dark');
-          elThemeIcon.setAttribute('data-lucide', 'sun');
+          document.getElementById('theme-icon').setAttribute('data-lucide', 'sun');
         }
         renderIcons();
       }

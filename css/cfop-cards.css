@@ -3,12 +3,12 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 .cfop-readable {
-  --cfop-surface: #111c2d;
-  --cfop-inset: #080f1c;
-  --cfop-border: #334155;
-  --cfop-text: #f1f5f9;
-  --cfop-muted: #a9b8cb;
-  --cfop-accent: #67e8f9;
+  --cfop-surface: var(--workspace-bg);
+  --cfop-inset: var(--workspace-panel);
+  --cfop-border: var(--workspace-line);
+  --cfop-text: var(--workspace-text);
+  --cfop-muted: var(--workspace-muted);
+  --cfop-accent: var(--workspace-text);
 }
 .cfop-card {
   min-width: 0;
@@ -37,26 +37,9 @@
 .cfop-moves { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 600; line-height: 2.1; color: var(--cfop-accent); padding-top: 6px; user-select: text; overflow-wrap: anywhere; }
 .cfop-move { display: inline-block; white-space: nowrap; }
 .cfop-trigger { display: inline; padding: 2px 0; border-bottom: 1px solid var(--cfop-border); }
-.cfop-rotation { color: #fcd34d; }
 .cfop-card button:hover { color: var(--cfop-accent); }
 .cfop-card button:focus-visible { outline: 2px solid var(--cfop-accent); outline-offset: 3px; }
-html.light .cfop-readable {
-  --cfop-surface: #ffffff;
-  --cfop-inset: #eaf0f7;
-  --cfop-border: #b9c7d8;
-  --cfop-text: #172b46;
-  --cfop-muted: #435870;
-  --cfop-accent: #075569;
-}
-html.light .cfop-rotation { color: #8a4700; }
-html.light .is-learned .cfop-learn { color: #07684c; }
-html.light #my-algs-modal:has(.cfop-readable) > div > div:first-child,
-html.light #my-algs-modal:has(.cfop-readable) > div > div:nth-child(3) { background: #f8fafc; }
-html.light #my-algs-modal:has(.cfop-readable) :is(.algs-cat-btn, .algs-filter-btn) { color: #435870; }
-html.light #my-algs-modal:has(.cfop-readable) .algs-cat-btn[aria-pressed="true"] { color: #075569; background: #cffafe; border-color: #0e7490; }
-html.light #my-algs-modal:has(.cfop-readable) .algs-filter-btn[aria-pressed="true"],
-html.light #my-algs-modal:has(.cfop-readable) #close-my-algs-btn { color: #172b46; background: #e2e8f0; }
-html.light #my-algs-modal:has(.cfop-readable) #algs-progress-percent { color: #07684c; }
+.cfop-rotation { color: var(--workspace-accent); }
 @media (max-width: 767px) {
   #my-algs-card-list.cfop-readable { grid-template-columns: minmax(0, 1fr); }
 }

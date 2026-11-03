@@ -39,13 +39,17 @@
 
   function tokenize(algorithm) {
     const source = algorithm.replace(/[()]/g, '').replace(/\s+/g, '');
-    const tokens = source.match(/[URFDLBMESxyzurfdlb]w?(?:2'?|')?/g) || [];
+    const tokens = source.match(/[URFDLBMESxyzurfdlb]w?(?:[23]'?|')?/g) || [];
     if (tokens.join('') !== source) throw new Error('Unsupported cube notation');
     return tokens;
   }
 
   function inverse(algorithm) {
-    return tokenize(algorithm).reverse().map(token => token.includes('2') ? token.replace("'", '') : token.endsWith("'") ? token.slice(0, -1) : token + "'").join(' ');
+    return tokenize(algorithm).reverse().map(token => {
+      if (token.includes('2')) return token.replace("'", '');
+      if (token.includes('3')) return token.replace('3', '');
+      return token.endsWith("'") ? token.slice(0, -1) : token + "'";
+    }).join(' ');
   }
 
   function rotate(vector, axis, direction) {
@@ -59,8 +63,8 @@
     for (const token of tokenize(algorithm)) {
       const base = token.includes('w') ? token[0].toLowerCase() : token[0];
       const [axis, clockwise, layers] = moves[base];
-      const turns = token.includes('2') ? 2 : 1;
-      const direction = clockwise * (token.endsWith("'") && turns === 1 ? -1 : 1);
+      const turns = token.includes('2') ? 2 : token.includes('3') ? 3 : 1;
+      const direction = clockwise * (token.endsWith("'") && turns !== 2 ? -1 : 1);
       for (let turn = 0; turn < turns; turn++) {
         for (const sticker of cube) {
           if (!layers.includes(sticker.position[axis])) continue;
@@ -164,9 +168,10 @@
     return result;
   }
 
-  function f2lDiagram(algorithm, name) {
-    if (diagramCache.has('f2l_' + algorithm)) return diagramCache.get('f2l_' + algorithm);
-    const cube = standardCaseState(algorithm);
+  function f2lDiagram(algorithm, name, stickers = null, slot = 'FR') {
+    const cacheKey = JSON.stringify(['f2l', algorithm, name, stickers, slot]);
+    if (diagramCache.has(cacheKey)) return diagramCache.get(cacheKey);
+    const cube = stickers ? null : standardCaseState(algorithm);
     const faces = [
       ['U', [76, 10], [20, 10], [-20, 10]],
       ['F', [16, 40], [20, 10], [0, 22]],
@@ -174,16 +179,17 @@
     ];
     let content = '';
     for (const [face, origin, across, down] of faces) {
-      content += faceColors(cube, face).map((color, index) => {
+      const palette = stickers ? Array.from(stickers[face]) : faceColors(cube, face);
+      content += palette.map((color, index) => {
         const column = index % 3;
         const row = Math.floor(index / 3);
-        const corners = [[0.03, 0.03], [0.97, 0.03], [0.97, 0.97], [0.03, 0.97]].map(([offsetX, offsetY]) => `${origin[0] + (column + offsetX) * across[0] + (row + offsetY) * down[0]},${origin[1] + (column + offsetX) * across[1] + (row + offsetY) * down[1]}`).join(' ');
-        return `<polygon points="${corners}" fill="${colors[color]}" stroke="#0f172a" stroke-width="1" stroke-linejoin="round"/>`;
+        const corners = [[0.03, 0.03], [0.97, 0.03], [0.97, 0.97], [0.03, 0.97]].map(([offsetX, offsetY]) => `${(origin[0] + (column + offsetX) * across[0] + (row + offsetY) * down[0]).toFixed(1)},${(origin[1] + (column + offsetX) * across[1] + (row + offsetY) * down[1]).toFixed(1)}`).join(' ');
+        return `<polygon points="${corners}" fill="${colors[color] || '#475569'}" stroke="#0f172a" stroke-width="1" stroke-linejoin="round"/>`;
       }).join('');
     }
     content += '<text x="40" y="139" text-anchor="middle" fill="currentColor" font-size="10">F · Trước</text><text x="112" y="139" text-anchor="middle" fill="currentColor" font-size="10">R · Phải</text>';
-    const result = svg(content, `${name}: trạng thái trước khi giải, nhìn từ mặt trước và phải (slot FR)`, '0 0 152 145', 'cfop-diagram');
-    diagramCache.set('f2l_' + algorithm, result);
+    const result = svg(content, `${name}: trạng thái trước khi giải, slot ${slot}; U ở trên, F ở trước, R ở phải`, '0 0 152 145', 'cfop-diagram');
+    diagramCache.set(cacheKey, result);
     return result;
   }
 
@@ -222,25 +228,26 @@
   }
 
   function renderCard(item, category, learned, duplicates = []) {
-    const cacheKey = category + "_" + item.id + "_" + item.alg + "_" + item.name + "_" + learned + "_" + duplicates.join(",");
+    const cacheKey = JSON.stringify([category, item, learned, duplicates]);
     if (cardCache.has(cacheKey)) return cardCache.get(cacheKey);
 
-    const diagram = category === 'oll' ? ollDiagram(item.alg, item.name) : category === 'pll' ? pllDiagram(item.alg, item.name) : f2lDiagram(item.alg, item.name);
+    const diagram = category === 'oll' ? ollDiagram(item.alg, item.name) : category === 'pll' ? pllDiagram(item.alg, item.name) : f2lDiagram(item.alg, item.name, item.stickers, item.slot);
     const invalid = category === 'oll' ? !isOllState(caseState(item.alg)) : category === 'pll' && !isPllState(caseState(item.alg));
     const warning = invalid ? 'Cần kiểm tra công thức: trạng thái tạo ra chưa giữ nguyên hai tầng dưới hoặc không đúng loại case.' : '';
     const result = `<article class="cfop-card${learned ? ' is-learned' : ''}" aria-label="${escapeHtml(item.name)}">
-      <header class="cfop-card-heading"><h3>${escapeHtml(item.name)}</h3>
-        <button class="btn-toggle-learn cfop-learn" data-cat="${category}" data-id="${escapeHtml(item.id)}" aria-pressed="${learned}"><i data-lucide="${learned ? 'check-circle-2' : 'circle'}"></i><span>${learned ? 'Đã thuộc' : 'Chưa học'}</span></button>
+      <header class="cfop-card-heading"><h3>${escapeHtml(item.name)}${item.slot && !item.name.startsWith('F2L BR ') ? `<span class="cfop-slot">${escapeHtml(item.slot)}</span>` : ''}</h3>
+        <div class="cfop-card-actions"><button class="btn-copy-card-alg" data-alg="${escapeHtml(item.alg)}" title="Sao chép công thức" aria-label="Sao chép công thức ${escapeHtml(item.name)}"><i data-lucide="copy"></i></button><button class="btn-toggle-learn cfop-learn" data-cat="${category}" data-id="${escapeHtml(item.id)}" aria-pressed="${learned}" title="${learned ? 'Đã thuộc · Bấm để bỏ đánh dấu' : 'Đánh dấu đã thuộc'}" aria-label="${learned ? 'Bỏ đánh dấu' : 'Đánh dấu đã thuộc'} ${escapeHtml(item.name)}"><i data-lucide="${learned ? 'check-circle-2' : 'circle'}"></i></button></div>
       </header>
-      ${item.group ? `<p class="cfop-group">${escapeHtml(item.group)}</p>` : ''}
-      ${item.desc ? `<p class="cfop-description">${escapeHtml(item.desc)}</p>` : ''}
       ${warning ? `<p class="cfop-warning">${warning}</p>` : ''}
       ${duplicates.length ? `<p class="cfop-warning">Cùng chuỗi động tác với ${duplicates.map(escapeHtml).join(', ')}. Cần đối chiếu lại tên case.</p>` : ''}
-      <div class="cfop-card-body"><figure>${diagram}<figcaption>${category === 'oll' ? 'Ô vàng cần định hướng · F ở dưới, R ở phải' : category === 'pll' ? 'Nhìn từ trên · F ở dưới, R ở phải' : 'U ở trên · F ở trước · R ở phải (Slot FR)'}</figcaption></figure>
-        <div class="cfop-formula"><div class="cfop-formula-label"><span>Công thức giải</span><button class="btn-copy-card-alg" data-alg="${escapeHtml(item.alg)}" title="Sao chép công thức" aria-label="Sao chép công thức ${escapeHtml(item.name)}"><i data-lucide="copy"></i></button></div>
-          <div class="cfop-moves">${readableAlgorithm(item.alg)}</div>
-        </div>
+      <div class="cfop-card-body"><figure title="${category === 'f2l' ? `SVG · slot ${escapeHtml(item.slot || 'FR')} · U trên, F trước, R phải` : 'Nhìn từ trên · F ở dưới, R ở phải'}">${diagram}</figure>
+        <div class="cfop-formula"><div class="cfop-moves">${readableAlgorithm(item.alg)}</div></div>
       </div>
+      <details class="cfop-details"><summary>Chi tiết${item.alternatives?.length ? ` · ${item.alternatives.length} cách khác` : ''}</summary>
+        ${item.group ? `<p>${escapeHtml(item.group)}</p>` : ''}${item.desc ? `<p>${escapeHtml(item.desc)}</p>` : ''}
+        ${(item.alternatives || []).map(algorithm => `<div class="cfop-alternative"><div class="cfop-moves">${readableAlgorithm(algorithm)}</div><button class="btn-copy-card-alg" data-alg="${escapeHtml(algorithm)}" title="Sao chép cách khác" aria-label="Sao chép cách khác của ${escapeHtml(item.name)}"><i data-lucide="copy"></i></button></div>`).join('')}
+        ${item.source ? `<p class="cfop-source">${escapeHtml(item.source)} · trang ${escapeHtml(item.page || 1)}</p>` : ''}
+      </details>
     </article>`;
 
     cardCache.set(cacheKey, result);
