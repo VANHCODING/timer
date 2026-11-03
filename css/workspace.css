@@ -40,9 +40,6 @@ body[data-workspace="cfop"] {
 .app-header #theme-btn { width: 44px; height: 44px; background: var(--workspace-panel); color: var(--workspace-muted); border-color: var(--workspace-line); }
 .timer-toolbar { width: 100%; max-width: 1240px; margin: 0 auto; padding: 18px 24px 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; position: relative; z-index: 25; }
 .timer-mode-row, .timer-aux-row { display: flex; align-items: center; gap: 12px; min-width: 0; }
-.timer-mode-switch { display: flex; border-bottom: 1px solid var(--workspace-line); }
-.timer-mode-switch button { min-height: 44px; padding: 8px 12px; color: var(--workspace-muted); font-size: 13px; white-space: nowrap; border-bottom: 2px solid transparent; }
-.timer-mode-switch button[aria-pressed="true"] { color: var(--workspace-accent); border-bottom-color: var(--workspace-accent); font-weight: 700; }
 .timer-select-label { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--workspace-muted); }
 .timer-mode-row select { max-width: 100%; min-height: 44px; padding: 8px 12px; border: 1px solid var(--workspace-line); border-radius: 10px; background: var(--workspace-panel); color: var(--workspace-text); font-size: 13px; font-weight: 600; }
 .toolbar-button { display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--workspace-line); font-size: 12px; color: var(--workspace-muted); white-space: nowrap; }
@@ -223,7 +220,7 @@ body.is-solving #timer-trigger-area {
 }
 body.is-solving #timer-trigger-area > :not(#timer-display) { display: none !important; }
 body.is-solving #timer-display { font-size: clamp(40px, min(16vw, 35dvh), 240px); transform: none; }
-:is(.workspace-tab, .app-brand, .timer-mode-switch button, .toolbar-button, .algs-cat-btn, .algs-filter-btn, .timer-tools-menu button):focus-visible { outline: 2px solid var(--workspace-accent); outline-offset: 3px; }
+:is(.workspace-tab, .app-brand, .toolbar-button, .algs-cat-btn, .algs-filter-btn, .timer-tools-menu button):focus-visible { outline: 2px solid var(--workspace-accent); outline-offset: 3px; }
 
 @media (max-width: 1050px) {
   .timer-toolbar { flex-wrap: wrap; }
@@ -244,7 +241,7 @@ body.is-solving #timer-display { font-size: clamp(40px, min(16vw, 35dvh), 240px)
 }
 @media (max-width: 599px) and (max-height: 640px) {
   .cross-hint-panel { max-height: 100px; }
-  #timer-layout:has(> .cross-hint-panel:not(.hidden)) #timer-page > footer { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  #timer-layout:has(> .cross-hint-panel:not(.hidden)) #timer-page > footer { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   body:not(.is-solving) #timer-layout:has(> .cross-hint-panel:not(.hidden)) #timer-display { font-size: clamp(32px, min(12vw, 12dvh), 72px); }
 }
 @media (hover: none) and (pointer: coarse) {
@@ -257,13 +254,9 @@ body.is-solving #timer-display { font-size: clamp(40px, min(16vw, 35dvh), 240px)
   .workspace-tab { padding: 8px 12px; }
   .timer-toolbar { padding: 12px 16px 0; gap: 12px; }
   .timer-mode-row { flex-basis: 100%; gap: 10px; }
-  .timer-mode-switch { flex: 1; }
-  .timer-mode-switch button { flex: 1; padding: 8px; }
   .timer-select-label > span { display: none; }
   .timer-aux-row { width: 100%; justify-content: space-between; gap: 6px; }
   .timer-aux-row #session-btn { max-width: 145px; }
-  #sub-case-container:not(.hidden) { width: 100%; }
-  #sub-case-select { width: 100%; }
   #timer-display { font-size: clamp(40px, min(16vw, 18dvh), 120px); }
   .library-page { padding: 0 16px; height: calc(100dvh - 69px); max-height: calc(100dvh - 69px); }
   .library-heading { padding-top: 16px; gap: 10px; }

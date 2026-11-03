@@ -49,7 +49,7 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   
   <link rel="stylesheet" href="css/cfop-cards.css?v=20261103-light">
-  <link rel="stylesheet" href="css/workspace.css">
+  <link rel="stylesheet" href="css/workspace.css?v=20261103-scramble">
   <style>
     :root {
       --font-digital: 'Manrope', sans-serif;
@@ -163,7 +163,7 @@
     html.light #timer-display.text-white { color: #0F172A !important; }
     html.light #timer-status-pill { background-color: #F1F5F9 !important; border-color: #E2E8F0 !important; color: #64748B !important; }
   </style>
-  <link rel="stylesheet" href="css/compact.css?v=20261103-light-2">
+  <link rel="stylesheet" href="css/compact.css?v=20261103-scramble">
 </head>
 <body class="min-h-screen flex flex-col transition-colors duration-200 overflow-x-hidden">
 
@@ -185,14 +185,9 @@
   <p id="workspace-status" class="sr-only" role="status" aria-live="polite"></p>
   <section id="timer-toolbar" class="timer-toolbar" aria-label="Chọn chế độ bấm giờ">
     <div class="timer-mode-row">
-      <div class="timer-mode-switch" role="group" aria-label="Loại luyện tập">
-        <button data-timer-mode="normal" aria-pressed="true">Giải thường</button>
-        <button data-timer-mode="practice" aria-pressed="false">Luyện case</button>
-      </div>
       <label class="timer-select-label"><span id="puzzle-select-label">Loại cube</span>
         <select id="puzzle-select-dropdown" aria-labelledby="puzzle-select-label"><option value="333">3 × 3 × 3</option><option value="222">2 × 2 × 2</option><option value="444">4 × 4 × 4</option></select>
       </label>
-      <div id="sub-case-container" class="hidden"><label for="sub-case-select" class="sr-only">Bộ case luyện tập</label><select id="sub-case-select"></select></div>
     </div>
     <div class="timer-aux-row">
       <div class="relative">
@@ -246,7 +241,6 @@
           <span id="scramble-puzzle-badge" class="px-2 py-0.5 rounded-md font-mono font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 text-[11px] uppercase tracking-wider">
             3x3x3 WCA
           </span>
-          <span id="scramble-case-info" class="hidden text-amber-300 font-bold font-mono text-[11px]"></span>
         </div>
         <div class="flex items-center gap-1.5 text-slate-400">
           <button id="btn-copy-scramble" title="Sao chép scramble" class="flex items-center gap-1 hover:text-white px-2 py-1 rounded-lg hover:bg-slate-800 transition-colors">
@@ -262,20 +256,10 @@
 
       <!-- Scramble Card -->
       <div class="w-full max-w-3xl rounded-2xl glass-panel p-4 sm:p-5 text-center relative shadow-xl shadow-black/20 border border-slate-800 transition-all">
-        <p id="scramble-text" class="font-mono text-base sm:text-lg md:text-xl font-medium tracking-wide text-slate-200 leading-relaxed select-text">
+        <p id="scramble-text" role="status" aria-live="polite" aria-busy="true" data-scramble-state="loading" class="font-mono text-base sm:text-lg md:text-xl font-medium tracking-wide text-slate-200 leading-relaxed select-text">
           Đang tạo scramble...
         </p>
 
-        <!-- Solution hint (for OLL/PLL practice) -->
-        <div id="case-solution-hint" class="hidden mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs font-mono">
-          <div class="flex items-center gap-2 text-cyan-300 truncate">
-            <i data-lucide="key" class="w-3.5 h-3.5 text-amber-400 flex-shrink-0"></i>
-            <span>Công thức: <strong id="hint-alg-text" class="text-white select-text"></strong></span>
-          </div>
-          <button id="btn-copy-alg" class="text-slate-400 hover:text-white ml-2 flex items-center gap-1 text-[11px] flex-shrink-0" title="Copy công thức">
-            <i data-lucide="copy" class="w-3 h-3"></i> Copy
-          </button>
-        </div>
       </div>
 
     </section>
@@ -314,18 +298,10 @@
     <!-- ========================================================
          BOTTOM STATS STRIP
          ======================================================== -->
-    <footer class="w-full max-w-4xl grid grid-cols-3 sm:grid-cols-6 gap-2 text-center text-xs transition-all duration-150">
+    <footer class="w-full max-w-4xl grid grid-cols-4 gap-2 text-center text-xs transition-all duration-150" aria-label="Thống kê nhanh">
       <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-2.5">
         <div class="text-[10px] uppercase font-bold text-slate-500">Best</div>
         <div id="strip-best" class="font-mono font-bold text-emerald-400 text-sm mt-0.5">-</div>
-      </div>
-      <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-2.5">
-        <div class="text-[10px] uppercase font-bold text-slate-500">Current</div>
-        <div id="strip-current" class="font-mono font-bold text-white text-sm mt-0.5">-</div>
-      </div>
-      <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-2.5">
-        <div class="text-[10px] uppercase font-bold text-slate-500">mo3</div>
-        <div id="strip-mo3" class="font-mono font-bold text-cyan-400 text-sm mt-0.5">-</div>
       </div>
       <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-2.5">
         <div class="text-[10px] uppercase font-bold text-slate-500">ao5</div>
@@ -336,8 +312,8 @@
         <div id="strip-ao12" class="font-mono font-bold text-cyan-400 text-sm mt-0.5">-</div>
       </div>
       <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-2.5">
-        <div class="text-[10px] uppercase font-bold text-slate-500">ao50</div>
-        <div id="strip-ao50" class="font-mono font-bold text-cyan-400 text-sm mt-0.5">-</div>
+        <div class="text-[10px] uppercase font-bold text-slate-500">Mean</div>
+        <div id="strip-mean" class="font-mono font-bold text-cyan-400 text-sm mt-0.5">-</div>
       </div>
     </footer>
 
@@ -432,6 +408,11 @@
       </div>
     </div>
 
+    <div class="history-recent-stats" aria-label="Thống kê bổ sung">
+      <div><span>Current</span><strong id="drawer-stat-current">-</strong></div>
+      <div><span>mo3</span><strong id="drawer-stat-mo3">-</strong></div>
+      <div><span>ao50</span><strong id="drawer-stat-ao50">-</strong></div>
+    </div>
     <div class="px-4 py-2 bg-slate-900/80 border-b border-slate-800 flex items-center justify-between text-xs text-slate-400">
       <span id="drawer-solves-count">0 lượt giải</span>
       <button id="btn-export-trigger" class="hover:text-cyan-400 flex items-center gap-1">
@@ -584,6 +565,7 @@
        ======================================================== -->
   <script src="js/cfop-diagrams.js"></script>
   <script src="js/timer-input.js"></script>
+  <script src="js/wca-scrambler.js?v=20261103"></script>
   <script>
     function renderIcons() {
       if (window.lucide && typeof window.lucide.createIcons === 'function') {
@@ -735,75 +717,6 @@
     // ==========================================
     // 2. SCRAMBLER MODULE
     // ==========================================
-    const pickRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
-    const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
-    const SUFFIXES = ['', "'", '2'];
-
-    function invertAlgorithm(alg) {
-      return alg ? CFOPDiagrams.inverse(alg) : '';
-    }
-
-    function generate2x2(length = null) {
-      const count = length || randomInt(9, 11);
-      const faces = ['R', 'U', 'F'];
-      const scramble = [];
-      let lastFace = null;
-      for (let i = 0; i < count; i++) {
-        const available = faces.filter(f => f !== lastFace);
-        const face = pickRandom(available);
-        scramble.push(face + pickRandom(SUFFIXES));
-        lastFace = face;
-      }
-      return scramble.join(' ');
-    }
-
-    const OPPOSITES_3X3 = { U: 'D', D: 'U', L: 'R', R: 'L', F: 'B', B: 'F' };
-
-    function generate3x3(length = null) {
-      const count = length || randomInt(19, 22);
-      const faces = ['U', 'D', 'L', 'R', 'F', 'B'];
-      const scramble = [];
-      let lastFace = null;
-      let secondLastFace = null;
-
-      for (let i = 0; i < count; i++) {
-        const available = faces.filter(f => {
-          if (f === lastFace) return false;
-          if (lastFace && OPPOSITES_3X3[lastFace] === f && secondLastFace === f) return false;
-          return true;
-        });
-        const face = pickRandom(available);
-        scramble.push(face + pickRandom(SUFFIXES));
-        secondLastFace = lastFace;
-        lastFace = face;
-      }
-      return scramble.join(' ');
-    }
-
-    function generate4x4(length = null) {
-      const count = length || randomInt(40, 45);
-      const outerFaces = ['U', 'D', 'L', 'R', 'F', 'B'];
-      const wideFaces = ['Uw', 'Dw', 'Lw', 'Rw', 'Fw', 'Bw'];
-      const allFaces = [...outerFaces, ...wideFaces];
-      const scramble = [];
-      let lastBase = null;
-      let secondLastBase = null;
-      const getBase = (f) => f.replace('w', '');
-
-      for (let i = 0; i < count; i++) {
-        const available = allFaces.filter(f => {
-          const base = getBase(f);
-          if (f === lastBase) return false;
-          if (lastBase && OPPOSITES_3X3[lastBase] === base && secondLastBase === base) return false;
-          return true;
-        });
-        const face = pickRandom(available);
-        scramble.push(face + pickRandom(SUFFIXES));
-        secondLastBase = lastBase;
-        lastBase = getBase(face);
-      }
-      return scramble.join(' ');
-    }
 
     // ALL 21 WCA PLL CASES
     const PLL_CASES = [
@@ -891,68 +804,6 @@
       { id: '57', group: 'CO', name: 'OLL 57', alg: "(R U R' U') M' U R U' r'" }
     ];
 
-    const OLL_2LOOK_CASES = OLL_CASES.filter(c => parseInt(c.id, 10) >= 21 && parseInt(c.id, 10) <= 27);
-
-    function generatePLLScramble(mode = 'pll_21') {
-      let pool = PLL_CASES;
-      if (mode === 'pll_2look') {
-        pool = PLL_CASES.filter(c => ['Aa', 'Ab', 'E', 'Ua', 'Ub', 'H', 'Z'].includes(c.id));
-      } else if (mode === 'pll_edges') {
-        pool = PLL_CASES.filter(c => ['Ua', 'Ub', 'H', 'Z'].includes(c.id));
-      } else if (mode === 'pll_corners') {
-        pool = PLL_CASES.filter(c => ['Aa', 'Ab', 'E'].includes(c.id));
-      } else if (mode === 'pll_adjacent') {
-        pool = PLL_CASES.filter(c => ['T', 'F', 'Ja', 'Jb', 'Ra', 'Rb'].includes(c.id));
-      } else if (mode === 'pll_diagonal') {
-        pool = PLL_CASES.filter(c => ['V', 'Y', 'Na', 'Nb'].includes(c.id));
-      } else if (mode === 'pll_g') {
-        pool = PLL_CASES.filter(c => ['Ga', 'Gb', 'Gc', 'Gd'].includes(c.id));
-      }
-      const targetCase = pickRandom(pool.length ? pool : PLL_CASES);
-      const auf = ['', 'U', "U'", 'U2'];
-      const pre = pickRandom(auf);
-      const post = pickRandom(auf);
-      const inv = invertAlgorithm(targetCase.alg);
-      return {
-        scramble: [pre, inv, post].filter(Boolean).join(' '),
-        caseId: targetCase.id,
-        caseName: targetCase.name,
-        group: targetCase.group,
-        alg: targetCase.alg
-      };
-    }
-
-    function generateOLLScramble(mode = 'oll_57') {
-      let pool = OLL_CASES;
-      if (mode === 'oll_2look') {
-        pool = OLL_2LOOK_CASES;
-      } else if (mode === 'oll_dot') {
-        pool = OLL_CASES.filter(c => [1, 2, 3, 4, 17, 18, 19, 20].includes(parseInt(c.id, 10)));
-      }
-      const targetCase = pickRandom(pool.length ? pool : OLL_CASES);
-      const auf = ['', 'U', "U'", 'U2'];
-      const pre = pickRandom(auf);
-      const post = pickRandom(auf);
-      const inv = invertAlgorithm(targetCase.alg);
-      return {
-        scramble: [pre, inv, post].filter(Boolean).join(' '),
-        caseId: targetCase.id,
-        caseName: targetCase.name,
-        group: targetCase.group,
-        alg: targetCase.alg
-      };
-    }
-
-
-    function generateScramble(type = '333', options = {}) {
-      switch (type) {
-        case '222': return { scramble: generate2x2(options.length), type };
-        case '444': return { scramble: generate4x4(options.length), type };
-        case 'oll': return { ...generateOLLScramble(options.mode || 'oll_57'), type };
-        case 'pll': return { ...generatePLLScramble(options.mode || 'pll_21'), type };
-        default: return { scramble: generate3x3(options.length), type: '333' };
-      }
-    }
 
     // ALL 41 F2L CASES
     const F2L_41_CASES = [
@@ -1733,21 +1584,18 @@
     document.addEventListener('DOMContentLoaded', () => {
       const storage = new StorageManager();
       let currentPuzzle = '333';
-      let currentPracticeMode = 'oll_57';
       let currentScrambleData = null;
+      let scrambleLoading = true;
+      let scrambleRequestId = 0;
+      const scrambler = new WcaScrambler();
       let activeSolveModalId = null;
 
       const elHtml = document.documentElement;
       const elBody = document.body;
       const elScrambleText = document.getElementById('scramble-text');
       const elScrambleBadge = document.getElementById('scramble-puzzle-badge');
-      const elScrambleCaseInfo = document.getElementById('scramble-case-info');
-      const elCaseHint = document.getElementById('case-solution-hint');
-      const elHintAlgText = document.getElementById('hint-alg-text');
-      const elBtnCopyAlg = document.getElementById('btn-copy-alg');
-
-      const elSubCaseContainer = document.getElementById('sub-case-container');
-      const elSubCaseSelect = document.getElementById('sub-case-select');
+      const elNextScramble = document.getElementById('btn-next-scramble');
+      const elCopyScramble = document.getElementById('btn-copy-scramble');
 
       const elTimerTrigger = document.getElementById('timer-trigger-area');
       const elTimerDisplay = document.getElementById('timer-display');
@@ -1802,16 +1650,17 @@
       const elBtnDrawerClear = document.getElementById('btn-drawer-clear');
 
       const elStripBest = document.getElementById('strip-best');
-      const elStripCurrent = document.getElementById('strip-current');
-      const elStripMo3 = document.getElementById('strip-mo3');
       const elStripAo5 = document.getElementById('strip-ao5');
       const elStripAo12 = document.getElementById('strip-ao12');
-      const elStripAo50 = document.getElementById('strip-ao50');
+      const elStripMean = document.getElementById('strip-mean');
 
       const elDrawerBest = document.getElementById('drawer-stat-best');
       const elDrawerMean = document.getElementById('drawer-stat-mean');
       const elDrawerBestAo5 = document.getElementById('drawer-stat-best-ao5');
       const elDrawerBestAo12 = document.getElementById('drawer-stat-best-ao12');
+      const elDrawerCurrent = document.getElementById('drawer-stat-current');
+      const elDrawerMo3 = document.getElementById('drawer-stat-mo3');
+      const elDrawerAo50 = document.getElementById('drawer-stat-ao50');
 
       const elSessionBtn = document.getElementById('session-btn');
       const elSessionDropdown = document.getElementById('session-dropdown');
@@ -1925,37 +1774,56 @@
         }
       });
 
-      // Update Scramble & Case Info
-      function updateScramble() {
-        currentScrambleData = generateScramble(currentPuzzle, { mode: currentPracticeMode });
-        elScrambleText.textContent = currentScrambleData.scramble;
-
-        const badgeMap = {
-          '222': '2x2x2 WCA',
-          '333': '3x3x3 WCA',
-          '444': '4x4x4 WCA',
-          'oll': 'OLL Luyện tập',
-          'pll': 'PLL Luyện tập'
-        };
-        elScrambleBadge.textContent = badgeMap[currentPuzzle] || currentPuzzle;
-
-        if (currentPuzzle === 'oll' || currentPuzzle === 'pll') {
-          elScrambleCaseInfo.classList.remove('hidden');
-          elScrambleCaseInfo.textContent = currentScrambleData.caseName;
-          elCaseHint.classList.remove('hidden');
-          elHintAlgText.textContent = currentScrambleData.alg;
-        } else {
-          elScrambleCaseInfo.classList.add('hidden');
-          elCaseHint.classList.add('hidden');
-        }
-
-        elToggleCrossBtn.disabled = currentPuzzle !== '333';
-        if (currentPuzzle !== '333') {
+      async function updateScramble() {
+        if ([TIMER_STATES.RUNNING, TIMER_STATES.INSPECTING].includes(timer.state)) return;
+        const requestId = ++scrambleRequestId;
+        const puzzle = currentPuzzle;
+        const badgeMap = { '222': '2 × 2 × 2', '333': '3 × 3 × 3', '444': '4 × 4 × 4' };
+        timer.cancelHold();
+        isSpacePressed = false;
+        scrambleLoading = true;
+        currentScrambleData = null;
+        currentF2LResult = null;
+        elScrambleBadge.textContent = badgeMap[puzzle];
+        elScrambleBadge.title = 'csTimer · ' + ({ '222': '222so', '333': '333', '444': '444wca' })[puzzle];
+        elScrambleText.textContent = 'Đang tạo scramble ' + badgeMap[puzzle] + '…';
+        elScrambleText.dataset.scrambleState = 'loading';
+        elScrambleText.setAttribute('aria-busy', 'true');
+        elNextScramble.disabled = true;
+        elCopyScramble.disabled = true;
+        elToggleCrossBtn.disabled = true;
+        if (puzzle !== '333') {
           elCsTimerTool.classList.add('hidden');
           elToggleCrossBtn.setAttribute('aria-expanded', 'false');
+        } else if (!elCsTimerTool.classList.contains('hidden')) {
+          elCsTimerCross.textContent = 'Đang chờ scramble…';
+          [elCsTimerF2l1, elCsTimerF2l2, elCsTimerF2l3, elCsTimerF2l4].forEach(element => { element.textContent = '...'; });
         }
-        if (currentPuzzle === '333' && !elCsTimerTool.classList.contains('hidden')) {
-          calculateCrossAndF2L(currentScrambleData.scramble);
+        try {
+          const data = await scrambler.generate(puzzle);
+          if (requestId !== scrambleRequestId) return;
+          currentScrambleData = data;
+          scrambleLoading = false;
+          elScrambleText.replaceChildren(...data.scramble.split(' ').map(move => {
+            const element = document.createElement('span');
+            element.className = 'scramble-move';
+            element.textContent = move + ' ';
+            return element;
+          }));
+          elScrambleText.dataset.scrambleState = 'ready';
+          elCopyScramble.disabled = false;
+          elToggleCrossBtn.disabled = puzzle !== '333';
+          if (puzzle === '333' && !elCsTimerTool.classList.contains('hidden')) calculateCrossAndF2L(data.scramble);
+        } catch (error) {
+          if (requestId !== scrambleRequestId) return;
+          elScrambleText.textContent = 'Không tạo được scramble. Nhấn Next để thử lại.';
+          elScrambleText.dataset.scrambleState = 'error';
+          elCsTimerCross.textContent = 'Chưa có scramble hợp lệ';
+        } finally {
+          if (requestId === scrambleRequestId) {
+            elScrambleText.setAttribute('aria-busy', 'false');
+            elNextScramble.disabled = false;
+          }
         }
       }
 
@@ -2033,14 +1901,6 @@
         }
       });
 
-      elBtnCopyAlg.addEventListener('click', () => {
-        if (currentScrambleData && currentScrambleData.alg) {
-          navigator.clipboard.writeText(currentScrambleData.alg);
-          elBtnCopyAlg.innerHTML = '<i data-lucide="check" class="w-3 h-3 text-emerald-400"></i> Copied!';
-          renderIcons();
-          setTimeout(() => { elBtnCopyAlg.innerHTML = '<i data-lucide="copy" class="w-3 h-3"></i> Copy'; renderIcons(); }, 1500);
-        }
-      });
 
       // Quick Actions
       function updateQuickActions(solve) {
@@ -2066,16 +1926,17 @@
         elDrawerSolvesCount.textContent = `${solves.length} lượt giải`;
 
         elStripBest.textContent = stats.best !== null ? formatTime(stats.best, showMs) : '-';
-        elStripCurrent.textContent = stats.current ? formatSolveDisplay(stats.current, showMs) : '-';
-        elStripMo3.textContent = stats.mo3 !== null ? formatTime(stats.mo3, showMs) : '-';
         elStripAo5.textContent = stats.ao5 !== null ? formatTime(stats.ao5, showMs) : '-';
         elStripAo12.textContent = stats.ao12 !== null ? formatTime(stats.ao12, showMs) : '-';
-        elStripAo50.textContent = stats.ao50 !== null ? formatTime(stats.ao50, showMs) : '-';
+        elStripMean.textContent = stats.mean !== null ? formatTime(stats.mean, showMs) : '-';
 
         elDrawerBest.textContent = stats.best !== null ? formatTime(stats.best, showMs) : '-';
         elDrawerMean.textContent = stats.mean !== null ? formatTime(stats.mean, showMs) : '-';
         elDrawerBestAo5.textContent = stats.bestAo5 !== null ? formatTime(stats.bestAo5, showMs) : '-';
         elDrawerBestAo12.textContent = stats.bestAo12 !== null ? formatTime(stats.bestAo12, showMs) : '-';
+        elDrawerCurrent.textContent = stats.current ? formatSolveDisplay(stats.current, showMs) : '-';
+        elDrawerMo3.textContent = stats.mo3 !== null ? formatTime(stats.mo3, showMs) : '-';
+        elDrawerAo50.textContent = stats.ao50 !== null ? formatTime(stats.ao50, showMs) : '-';
 
         renderSolvesList(solves);
         updateLearnedBadge();
@@ -2131,7 +1992,7 @@
       // ==========================================
       let isSpacePressed = false;
       function isTimerInputBlocked() {
-        return !elMyAlgsModal.classList.contains('hidden') ||
+        return scrambleLoading || !currentScrambleData || !elMyAlgsModal.classList.contains('hidden') ||
           [elSettingsModal, elExportModal, elSolveModal].some(element => !element.classList.contains('hidden')) ||
           !elDrawer.classList.contains('translate-x-full') || document.getElementById('timer-tools').open;
       }
@@ -2224,72 +2085,21 @@
         }
       });
 
-      // Puzzle Dropdown & Mode Selector
       const elPuzzleSelectDropdown = document.getElementById('puzzle-select-dropdown');
-      let lastNormalPuzzle = '333';
-      let lastPracticePuzzle = 'oll';
-      
-      function setPuzzle(p) {
-        if (timer.state === TIMER_STATES.RUNNING) return;
+
+      function setPuzzle(puzzle) {
+        if (timer.state === TIMER_STATES.RUNNING || !['222', '333', '444'].includes(puzzle)) return;
         timer.cancelHold();
         timer.stopInspection();
         timer.inspectionPenalty = null;
         timer.inspectionElapsed = 0;
         if (timer.state === TIMER_STATES.INSPECTING) timer.setState(TIMER_STATES.IDLE);
-        currentPuzzle = p;
-        const practice = p === 'oll' || p === 'pll';
-        if (practice) lastPracticePuzzle = p;
-        else lastNormalPuzzle = p;
-        const choices = practice ? [['oll', 'OLL · 57 case'], ['pll', 'PLL · 21 case']] : [['333', '3 × 3 × 3'], ['222', '2 × 2 × 2'], ['444', '4 × 4 × 4']];
-        elPuzzleSelectDropdown.innerHTML = choices.map(([value, label]) => `<option value="${value}">${label}</option>`).join('');
-        document.getElementById('puzzle-select-label').textContent = practice ? 'Bộ công thức' : 'Loại cube';
-        document.querySelectorAll('[data-timer-mode]').forEach(button => button.setAttribute('aria-pressed', String((button.dataset.timerMode === 'practice') === practice)));
-        if (elPuzzleSelectDropdown) elPuzzleSelectDropdown.value = p;
-
-        if (p === 'oll') {
-          elSubCaseContainer.classList.remove('hidden');
-          elSubCaseContainer.classList.add('flex');
-          elSubCaseSelect.innerHTML = `
-            <option value="oll_57">Tất cả 57 OLL</option>
-            <option value="oll_2look">7 OLL dấu thập (2-Look OLL)</option>
-            <option value="oll_dot">8 OLL dấu chấm (Dot Cases)</option>
-          `;
-          currentPracticeMode = 'oll_57';
-        } else if (p === 'pll') {
-          elSubCaseContainer.classList.remove('hidden');
-          elSubCaseContainer.classList.add('flex');
-          elSubCaseSelect.innerHTML = `
-            <option value="pll_21">Tất cả 21 PLL</option>
-            <option value="pll_2look">6 PLL cơ bản (2-Look PLL)</option>
-            <option value="pll_edges">Hoán vị 4 cạnh (Ua, Ub, H, Z)</option>
-            <option value="pll_corners">Hoán vị 3 góc (Aa, Ab, E)</option>
-            <option value="pll_adjacent">Đổi 2 góc liền kề (T, F, J, R)</option>
-            <option value="pll_diagonal">Đổi 2 góc chéo (V, Y, N)</option>
-            <option value="pll_g">4 trường hợp G-Perm (Ga, Gb, Gc, Gd)</option>
-          `;
-          currentPracticeMode = 'pll_21';
-        } else {
-          elSubCaseContainer.classList.add('hidden');
-          elSubCaseContainer.classList.remove('flex');
-          currentPracticeMode = null;
-        }
+        currentPuzzle = puzzle;
+        elPuzzleSelectDropdown.value = puzzle;
         updateScramble();
       }
 
-      if (elPuzzleSelectDropdown) {
-        elPuzzleSelectDropdown.addEventListener('change', (e) => {
-          setPuzzle(e.target.value);
-        });
-      }
-
-      document.querySelectorAll('[data-timer-mode]').forEach(button => {
-        button.addEventListener('click', () => setPuzzle(button.dataset.timerMode === 'practice' ? lastPracticePuzzle : lastNormalPuzzle));
-      });
-
-      elSubCaseSelect.addEventListener('change', (e) => {
-        currentPracticeMode = e.target.value;
-        updateScramble();
-      });
+      elPuzzleSelectDropdown.addEventListener('change', event => setPuzzle(event.target.value));
 
       document.getElementById('btn-next-scramble').addEventListener('click', () => updateScramble());
       document.getElementById('btn-copy-scramble').addEventListener('click', () => {
