@@ -217,9 +217,10 @@ body.is-solving #timer-trigger-area {
   z-index: 40;
   background: var(--workspace-bg);
   transition: none;
+  contain: layout style paint;
 }
 body.is-solving #timer-trigger-area > :not(#timer-display) { display: none !important; }
-body.is-solving #timer-display { font-size: clamp(40px, min(16vw, 35dvh), 240px); transform: none; }
+body.is-solving #timer-display { font-size: clamp(40px, min(16vw, 35dvh), 240px); transform: none; transition: none; animation: none; }
 :is(.workspace-tab, .app-brand, .toolbar-button, .algs-cat-btn, .algs-filter-btn, .timer-tools-menu button):focus-visible { outline: 2px solid var(--workspace-accent); outline-offset: 3px; }
 
 @media (max-width: 1050px) {

@@ -17,39 +17,13 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              charcoal: '#0B0F17',
-              dark: '#111827',
-              card: '#182234',
-              accent: '#06B6D4',
-              emerald: '#10B981',
-              rose: '#F43F5E',
-              amber: '#F59E0B'
-            }
-          },
-          fontFamily: {
-            sans: ['Manrope', 'sans-serif'],
-            mono: ['Manrope', 'sans-serif'],
-            digital: ['Manrope', 'sans-serif']
-          }
-        }
-      }
-    }
-  </script>
+  <link rel="stylesheet" href="css/tailwind.css?v=20261103-perf">
 
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
   
   <link rel="stylesheet" href="css/cfop-cards.css?v=20261103-light">
-  <link rel="stylesheet" href="css/workspace.css?v=20261103-scramble">
+  <link rel="stylesheet" href="css/workspace.css?v=20261103-perf">
   <style>
     :root {
       --font-digital: 'Manrope', sans-serif;
@@ -275,7 +249,7 @@
       </div>
 
       <!-- Huge Timer Digits -->
-      <div id="timer-display" class="font-timer text-7xl sm:text-8xl md:text-9xl lg:text-[10.5rem] font-extrabold tracking-tight text-white transition-all duration-150 select-none">
+      <div id="timer-display" class="font-timer text-7xl sm:text-8xl md:text-9xl lg:text-[10.5rem] font-extrabold tracking-tight text-white select-none">
         0.00
       </div>
 
@@ -565,6 +539,7 @@
        ======================================================== -->
   <script src="js/cfop-diagrams.js"></script>
   <script src="js/timer-input.js"></script>
+  <script src="js/timer-display.js?v=20261103-perf"></script>
   <script src="js/wca-scrambler.js?v=20261103"></script>
   <script>
     function renderIcons() {
@@ -1541,14 +1516,21 @@
       }
 
       start() {
+        cancelAnimationFrame(this.animationFrameId);
         this.startTime = performance.now();
         this.elapsedTime = 0;
+        let lastDisplayUnit = 0;
         this.setState(TIMER_STATES.RUNNING);
+        this.onTick({ isInspection: false, elapsedTime: 0 });
 
-        const loop = () => {
+        const loop = frameTime => {
           if (this.state === TIMER_STATES.RUNNING) {
-            this.elapsedTime = performance.now() - this.startTime;
-            this.onTick({ isInspection: false, elapsedTime: this.elapsedTime });
+            this.elapsedTime = Math.max(0, frameTime - this.startTime);
+            const displayUnit = Math.floor(this.elapsedTime / (this.showMs ? 1 : 10));
+            if (displayUnit !== lastDisplayUnit) {
+              lastDisplayUnit = displayUnit;
+              this.onTick({ isInspection: false, elapsedTime: this.elapsedTime });
+            }
             this.animationFrameId = requestAnimationFrame(loop);
           }
         };
@@ -1558,6 +1540,7 @@
       stop() {
         if (this.state !== TIMER_STATES.RUNNING) return;
         cancelAnimationFrame(this.animationFrameId);
+        this.animationFrameId = null;
         this.elapsedTime = performance.now() - this.startTime;
         this.setState(TIMER_STATES.STOPPED, { elapsedTime: this.elapsedTime });
 
@@ -1587,6 +1570,7 @@
       let currentScrambleData = null;
       let scrambleLoading = true;
       let scrambleRequestId = 0;
+      let historyListDirty = true;
       const scrambler = new WcaScrambler();
       let activeSolveModalId = null;
 
@@ -1599,6 +1583,7 @@
 
       const elTimerTrigger = document.getElementById('timer-trigger-area');
       const elTimerDisplay = document.getElementById('timer-display');
+      const renderTimerTime = TimerDisplay.create(elTimerDisplay);
       const elTimerStatus = document.getElementById('timer-status-pill');
       const elQuickActions = document.getElementById('solve-quick-actions');
       const elBtnPenaltyPlus2 = document.getElementById('btn-penalty-plus2');
@@ -1751,11 +1736,11 @@
 
         onTick: (tick) => {
           if (tick.isInspection) {
-            elTimerDisplay.textContent = tick.secondsLeft;
-            if (tick.penalty === '+2') elTimerStatus.textContent = 'CẢNH BÁO: +2 GIÂY (QUÁ 15S)';
-            else if (tick.penalty === 'DNF') elTimerStatus.textContent = 'CẢNH BÁO: DNF (QUÁ 17S)';
+            renderTimerTime(tick.secondsLeft);
+            const warning = tick.penalty === '+2' ? 'CẢNH BÁO: +2 GIÂY (QUÁ 15S)' : tick.penalty === 'DNF' ? 'CẢNH BÁO: DNF (QUÁ 17S)' : null;
+            if (warning && elTimerStatus.textContent !== warning) elTimerStatus.textContent = warning;
           } else {
-            elTimerDisplay.textContent = formatTime(tick.elapsedTime, storage.settings.showMs);
+            renderTimerTime(formatTime(tick.elapsedTime, storage.settings.showMs));
           }
         },
 
@@ -1767,7 +1752,7 @@
             puzzle: currentPuzzle,
             inspectionTime: res.inspectionTime
           });
-          elTimerDisplay.textContent = formatSolveDisplay(solve, storage.settings.showMs);
+          renderTimerTime(formatSolveDisplay(solve, storage.settings.showMs));
           updateQuickActions(solve);
           refreshSessionUI();
           updateScramble();
@@ -1938,7 +1923,11 @@
         elDrawerMo3.textContent = stats.mo3 !== null ? formatTime(stats.mo3, showMs) : '-';
         elDrawerAo50.textContent = stats.ao50 !== null ? formatTime(stats.ao50, showMs) : '-';
 
-        renderSolvesList(solves);
+        historyListDirty = true;
+        if (!elDrawer.classList.contains('translate-x-full')) {
+          renderSolvesList(solves);
+          historyListDirty = false;
+        }
         updateLearnedBadge();
         if (storage.lastDeleted) elBtnDrawerUndo.classList.remove('hidden');
         else elBtnDrawerUndo.classList.add('hidden');
@@ -2029,12 +2018,12 @@
             storage.updateSolvePenalty(lastSolve.id, lastSolve.penalty === '+2' ? null : '+2');
             refreshSessionUI();
             updateQuickActions(lastSolve);
-            elTimerDisplay.textContent = formatSolveDisplay(lastSolve, storage.settings.showMs);
+            renderTimerTime(formatSolveDisplay(lastSolve, storage.settings.showMs));
           } else if ((e.key === 'd' || e.key === 'D') && lastSolve) {
             storage.updateSolvePenalty(lastSolve.id, lastSolve.penalty === 'DNF' ? null : 'DNF');
             refreshSessionUI();
             updateQuickActions(lastSolve);
-            elTimerDisplay.textContent = formatSolveDisplay(lastSolve, storage.settings.showMs);
+            renderTimerTime(formatSolveDisplay(lastSolve, storage.settings.showMs));
           }
         }
       });
@@ -2062,7 +2051,7 @@
           storage.updateSolvePenalty(last.id, last.penalty === '+2' ? null : '+2');
           refreshSessionUI();
           updateQuickActions(last);
-          elTimerDisplay.textContent = formatSolveDisplay(last, storage.settings.showMs);
+          renderTimerTime(formatSolveDisplay(last, storage.settings.showMs));
         }
       });
 
@@ -2073,14 +2062,14 @@
           storage.updateSolvePenalty(last.id, last.penalty === 'DNF' ? null : 'DNF');
           refreshSessionUI();
           updateQuickActions(last);
-          elTimerDisplay.textContent = formatSolveDisplay(last, storage.settings.showMs);
+          renderTimerTime(formatSolveDisplay(last, storage.settings.showMs));
         }
       });
 
       elBtnDeleteLast.addEventListener('click', () => {
         if (storage.deleteLastSolve()) {
           elQuickActions.classList.add('hidden');
-          elTimerDisplay.textContent = '0.00';
+          renderTimerTime('0.00');
           refreshSessionUI();
         }
       });
@@ -2300,7 +2289,7 @@
             storage.setActiveSessionId(item.dataset.sessionId);
             elSessionDropdown.classList.add('hidden');
             refreshSessionUI();
-            elTimerDisplay.textContent = '0.00';
+            renderTimerTime('0.00');
             elQuickActions.classList.add('hidden');
           });
         });
@@ -2324,7 +2313,7 @@
           storage.createSession(name, currentPuzzle);
           elSessionDropdown.classList.add('hidden');
           refreshSessionUI();
-          elTimerDisplay.textContent = '0.00';
+          renderTimerTime('0.00');
         }
       });
 
@@ -2344,13 +2333,17 @@
           storage.clearActiveSessionSolves();
           elSessionDropdown.classList.add('hidden');
           refreshSessionUI();
-          elTimerDisplay.textContent = '0.00';
+          renderTimerTime('0.00');
           elQuickActions.classList.add('hidden');
         }
       });
 
       // Solves Drawer
       elToggleDrawerBtn.addEventListener('click', () => {
+        if (historyListDirty) {
+          renderSolvesList(storage.getActiveSession().solves);
+          historyListDirty = false;
+        }
         elDrawer.classList.remove('translate-x-full');
         elDrawerBackdrop.classList.remove('hidden');
       });
@@ -2371,7 +2364,7 @@
         if (confirm('Xóa tất cả lượt giải của session hiện tại?')) {
           storage.clearActiveSessionSolves();
           refreshSessionUI();
-          elTimerDisplay.textContent = '0.00';
+          renderTimerTime('0.00');
           elQuickActions.classList.add('hidden');
         }
       });
