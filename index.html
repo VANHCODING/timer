@@ -137,7 +137,7 @@
     html.light #timer-display.text-white { color: #0F172A !important; }
     html.light #timer-status-pill { background-color: #F1F5F9 !important; border-color: #E2E8F0 !important; color: #64748B !important; }
   </style>
-  <link rel="stylesheet" href="css/compact.css?v=20261103-scramble">
+  <link rel="stylesheet" href="css/compact.css?v=20261110-manual-algs">
 </head>
 <body class="min-h-screen flex flex-col transition-colors duration-200 overflow-x-hidden">
 
@@ -161,6 +161,9 @@
     <div class="timer-mode-row">
       <label class="timer-select-label"><span id="puzzle-select-label">Loại cube</span>
         <select id="puzzle-select-dropdown" aria-labelledby="puzzle-select-label"><option value="333">3 × 3 × 3</option><option value="222">2 × 2 × 2</option><option value="444">4 × 4 × 4</option></select>
+      </label>
+      <label class="timer-select-label"><span id="timer-entry-label">Nhập kết quả</span>
+        <select id="timer-entry-mode" aria-labelledby="timer-entry-label"><option value="timer">Bấm giờ</option><option value="manual">Nhập tay</option></select>
       </label>
     </div>
     <div class="timer-aux-row">
@@ -267,6 +270,15 @@
         </button>
       </div>
 
+      <form id="manual-time-form" class="manual-time-form" hidden>
+        <label for="manual-time-input">Thời gian trên đồng hồ của bạn</label>
+        <div class="manual-time-row">
+          <input id="manual-time-input" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="12.34 hoặc 1:02.345" aria-describedby="manual-time-help manual-time-feedback" required>
+          <button type="submit">Lưu lượt giải</button>
+        </div>
+        <p id="manual-time-help">Nhập giây hoặc phút:giây, tối đa 3 số thập phân. Enter để lưu.</p>
+        <p id="manual-time-feedback" role="status" aria-live="polite"></p>
+      </form>
     </section>
 
     <!-- ========================================================
@@ -1117,7 +1129,8 @@
       SESSIONS: 'speedcubing_timer_sessions',
       ACTIVE_SESSION: 'speedcubing_timer_active_session_id',
       SETTINGS: 'speedcubing_timer_settings',
-      LEARNED: 'speedcubing_learned_cases_v3'
+      LEARNED: 'speedcubing_learned_cases_v3',
+      ALGORITHMS: 'speedcubing_algorithm_variants_v1'
     };
     const DEFAULT_SETTINGS = {
       theme: 'light',
@@ -1126,7 +1139,8 @@
       inspectionAudio: true,
       holdDelayMs: 300,
       showMs: false,
-      hideTimerWhileRunning: false
+      hideTimerWhileRunning: false,
+      inputMode: 'timer'
     };
 
     class StorageManager {
@@ -1135,7 +1149,39 @@
         this.activeSessionId = this.loadActiveSessionId();
         this.settings = this.loadSettings();
         this.learned = this.loadLearned();
+        this.algorithmVariants = this.loadAlgorithmVariants();
         this.lastDeleted = null;
+      }
+
+      normalizeAlgorithmVariants(data) {
+        const normalized = {};
+        if (!data || typeof data !== 'object' || Array.isArray(data)) return normalized;
+        for (const [key, algorithms] of Object.entries(data)) {
+          if (!/^(oll|pll|f2l):.+$/.test(key) || !Array.isArray(algorithms)) continue;
+          const variants = [...new Set(algorithms.filter(value => typeof value === 'string' && value.trim().length <= 1000).map(value => value.trim().replace(/\s+/g, ' ')).filter(Boolean))];
+          if (variants.length) normalized[key] = variants;
+        }
+        return normalized;
+      }
+
+      loadAlgorithmVariants() {
+        try { return this.normalizeAlgorithmVariants(JSON.parse(localStorage.getItem(STORAGE_KEYS.ALGORITHMS) || '{}')); }
+        catch (error) { return {}; }
+      }
+
+      getAlgorithms(category, item) {
+        return (this.algorithmVariants[`${category}:${item.id}`] || [item.alg, ...(item.alternatives || [])]).slice();
+      }
+
+      saveAlgorithms(category, id, algorithms) {
+        const key = `${category}:${id}`;
+        const normalized = this.normalizeAlgorithmVariants({ [key]: algorithms });
+        if (!normalized[key]) return false;
+        const next = { ...this.algorithmVariants, [key]: normalized[key] };
+        try { localStorage.setItem(STORAGE_KEYS.ALGORITHMS, JSON.stringify(next)); }
+        catch (error) { return false; }
+        this.algorithmVariants = next;
+        return true;
       }
 
       loadLearned() {
@@ -1191,6 +1237,7 @@
         return {
           ...DEFAULT_SETTINGS,
           ...saved,
+          inputMode: saved?.inputMode === 'manual' ? 'manual' : 'timer',
           theme: saved?.appearanceVersion === DEFAULT_SETTINGS.appearanceVersion && saved.theme === 'dark' ? 'dark' : 'light',
           appearanceVersion: DEFAULT_SETTINGS.appearanceVersion
         };
@@ -1324,13 +1371,18 @@
       }
 
       exportToJSON() {
-        return { content: JSON.stringify({ version: '1.0.0', learnedRevision: 'pdf-2026-11-03', exportedAt: Date.now(), settings: this.settings, sessions: this.sessions, learned: this.learned }, null, 2), filename: `Speedcubing_Backup_${Date.now()}.json` };
+        return { content: JSON.stringify({ version: '1.0.0', learnedRevision: 'pdf-2026-11-03', exportedAt: Date.now(), settings: this.settings, sessions: this.sessions, learned: this.learned, algorithmVariants: this.algorithmVariants }, null, 2), filename: `Speedcubing_Backup_${Date.now()}.json` };
       }
 
       importFromJSON(jsonString) {
         try {
           const data = JSON.parse(jsonString);
           if (data && Array.isArray(data.sessions)) {
+            if (data.algorithmVariants) {
+              const variants = this.normalizeAlgorithmVariants(data.algorithmVariants);
+              localStorage.setItem(STORAGE_KEYS.ALGORITHMS, JSON.stringify(variants));
+              this.algorithmVariants = variants;
+            }
             this.sessions = data.sessions;
             if (data.settings) { this.settings = this.normalizeSettings(data.settings); localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(this.settings)); }
             if (data.learned) { this.saveLearned({ oll: Array.isArray(data.learned.oll) ? data.learned.oll : [], pll: data.learnedRevision === 'pdf-2026-11-03' && Array.isArray(data.learned.pll) ? data.learned.pll : [], f2l: data.learnedRevision === 'pdf-2026-11-03' && Array.isArray(data.learned.f2l) ? data.learned.f2l : [] }); }
@@ -1666,6 +1718,10 @@
       const elSettingShowMs = document.getElementById('setting-show-ms');
       const elSettingHoldDelay = document.getElementById('setting-hold-delay');
       const elHoldDelayValue = document.getElementById('hold-delay-value');
+      const elEntryMode = document.getElementById('timer-entry-mode');
+      const elManualForm = document.getElementById('manual-time-form');
+      const elManualInput = document.getElementById('manual-time-input');
+      const elManualFeedback = document.getElementById('manual-time-feedback');
 
       const elExportModal = document.getElementById('export-modal');
       const elCloseExportBtn = document.getElementById('close-export-btn');
@@ -1704,7 +1760,7 @@
           switch (state) {
             case TIMER_STATES.IDLE:
               elTimerDisplay.classList.add('text-white');
-              elTimerStatus.textContent = TimerInput.supportsTouch(window) ? 'Chạm giữ đồng hồ để chuẩn bị' : 'Giữ Space để chuẩn bị';
+              elTimerStatus.textContent = storage.settings.inputMode === 'manual' ? 'Nhập thời gian từ đồng hồ của bạn' : TimerInput.supportsTouch(window) ? 'Chạm giữ đồng hồ để chuẩn bị' : 'Giữ Space để chuẩn bị';
               elTimerStatus.className = 'mb-4 px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all duration-200 text-slate-400 bg-slate-900/60 border border-slate-800';
               break;
             case TIMER_STATES.HOLDING:
@@ -1744,19 +1800,67 @@
           }
         },
 
-        onSolveComplete: (res) => {
-          const solve = storage.addSolve({
-            time: res.time,
-            penalty: res.penalty,
-            scramble: currentScrambleData ? currentScrambleData.scramble : '',
-            puzzle: currentPuzzle,
-            inspectionTime: res.inspectionTime
-          });
-          renderTimerTime(formatSolveDisplay(solve, storage.settings.showMs));
-          updateQuickActions(solve);
-          refreshSessionUI();
-          updateScramble();
+        onSolveComplete: recordSolve
+      });
+
+      function recordSolve(res) {
+        const solve = storage.addSolve({
+          time: res.time,
+          penalty: res.penalty,
+          scramble: currentScrambleData ? currentScrambleData.scramble : '',
+          puzzle: currentPuzzle,
+          inspectionTime: res.inspectionTime
+        });
+        renderTimerTime(formatSolveDisplay(solve, storage.settings.showMs));
+        updateQuickActions(solve);
+        refreshSessionUI();
+        updateScramble();
+        return solve;
+      }
+
+      function syncEntryMode() {
+        elEntryMode.value = storage.settings.inputMode;
+        document.body.dataset.inputMode = storage.settings.inputMode;
+        elManualForm.hidden = storage.settings.inputMode !== 'manual';
+      }
+
+      elEntryMode.addEventListener('change', () => {
+        if (timer.state === TIMER_STATES.RUNNING) { syncEntryMode(); return; }
+        isSpacePressed = false;
+        timer.cancelHold();
+        timer.stopInspection();
+        timer.inspectionPenalty = null;
+        timer.inspectionElapsed = 0;
+        storage.saveSettings({ inputMode: elEntryMode.value });
+        syncEntryMode();
+        timer.setState(TIMER_STATES.IDLE);
+        elManualFeedback.textContent = '';
+        if (!elManualForm.hidden) elManualInput.focus();
+        else elTimerTrigger.focus({ preventScroll: true });
+      });
+
+      elManualForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        if (storage.settings.inputMode !== 'manual' || ![TIMER_STATES.IDLE, TIMER_STATES.STOPPED].includes(timer.state)) return;
+        const time = TimerInput.parseManualTime(elManualInput.value);
+        if (time === null) {
+          elManualInput.setAttribute('aria-invalid', 'true');
+          elManualFeedback.textContent = 'Thời gian phải lớn hơn 0, ví dụ 12.34 hoặc 1:02.345 (phần giây dưới 60).';
+          elManualInput.focus();
+          return;
         }
+        timer.elapsedTime = time;
+        timer.setState(TIMER_STATES.STOPPED);
+        const solve = recordSolve({ time, penalty: null, inspectionTime: null });
+        elManualInput.value = '';
+        elManualInput.removeAttribute('aria-invalid');
+        elManualFeedback.textContent = `Đã lưu ${formatTime(solve.time, true)} vào ${storage.getActiveSession().name}.`;
+        elManualInput.focus();
+      });
+
+      elManualInput.addEventListener('input', () => {
+        elManualInput.removeAttribute('aria-invalid');
+        elManualFeedback.textContent = '';
       });
 
       async function updateScramble() {
@@ -1981,7 +2085,7 @@
       // ==========================================
       let isSpacePressed = false;
       function isTimerInputBlocked() {
-        return scrambleLoading || !currentScrambleData || !elMyAlgsModal.classList.contains('hidden') ||
+        return storage.settings.inputMode === 'manual' || scrambleLoading || !currentScrambleData || !elMyAlgsModal.classList.contains('hidden') ||
           [elSettingsModal, elExportModal, elSolveModal].some(element => !element.classList.contains('hidden')) ||
           !elDrawer.classList.contains('translate-x-full') || document.getElementById('timer-tools').open;
       }
@@ -2233,7 +2337,7 @@
           if (currentAlgsSearch) {
             const matchName = (it.name || '').toLowerCase().includes(currentAlgsSearch);
             const matchGroup = (it.group || '').toLowerCase().includes(currentAlgsSearch);
-            const matchAlg = [it.alg, ...(it.alternatives || [])].some(algorithm => (algorithm || '').toLowerCase().includes(currentAlgsSearch));
+            const matchAlg = storage.getAlgorithms(currentAlgsCat, it).some(algorithm => algorithm.toLowerCase().includes(currentAlgsSearch));
             const matchSlot = (it.slot || '').toLowerCase().includes(currentAlgsSearch);
             return matchName || matchGroup || matchAlg || matchSlot;
           }
@@ -2248,7 +2352,7 @@
 
         elMyAlgsCardList.innerHTML = filtered.map(it => {
           const isL = learnedList.includes(String(it.id));
-          return CFOPDiagrams.renderCard(it, currentAlgsCat, isL);
+          return CFOPDiagrams.renderCard(it, currentAlgsCat, isL, [], storage.getAlgorithms(currentAlgsCat, it));
         }).join('');
 
         renderIcons();
@@ -2274,6 +2378,61 @@
           });
         });
       }
+
+      function findAlgorithmItem(card) {
+        const items = card.dataset.cat === 'oll' ? OLL_CASES : card.dataset.cat === 'pll' ? PLL_CASES : Object.values(f2lCollections).flat();
+        return items.find(item => String(item.id) === card.dataset.id);
+      }
+
+      function saveCardAlgorithms(card, algorithms, focusInput = false) {
+        if (!storage.saveAlgorithms(card.dataset.cat, card.dataset.id, algorithms)) {
+          card.querySelector('.cfop-editor-feedback').textContent = 'Chưa lưu được. Kiểm tra dung lượng lưu trữ của trình duyệt rồi thử lại.';
+          return;
+        }
+        const id = card.dataset.id;
+        renderMyAlgsView();
+        const updated = Array.from(elMyAlgsCardList.querySelectorAll('.cfop-card')).find(element => element.dataset.id === id);
+        if (!updated) return;
+        updated.querySelector('.cfop-editor').open = true;
+        updated.querySelector(focusInput ? 'textarea' : 'summary').focus({ preventScroll: true });
+        updated.querySelector('.cfop-editor-feedback').textContent = 'Đã lưu công thức và thứ tự.';
+      }
+
+      elMyAlgsCardList.addEventListener('submit', (event) => {
+        const form = event.target.closest('.cfop-add-form');
+        if (!form) return;
+        event.preventDefault();
+        const card = form.closest('.cfop-card');
+        const item = findAlgorithmItem(card);
+        if (!item) return;
+        const algorithm = form.elements.algorithm.value.trim().replace(/[’‘]/g, "'").replace(/\s+/g, ' ');
+        const algorithms = storage.getAlgorithms(card.dataset.cat, item);
+        if (!algorithm || algorithm.length > 1000 || algorithms.includes(algorithm)) {
+          card.querySelector('.cfop-editor-feedback').textContent = !algorithm ? 'Hãy nhập công thức trước khi thêm.' : algorithm.length > 1000 ? 'Công thức tối đa 1000 ký tự.' : 'Công thức này đã có trong danh sách.';
+          return;
+        }
+        saveCardAlgorithms(card, [...algorithms, algorithm], true);
+      });
+
+      elMyAlgsCardList.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-alg-action]');
+        if (!button || button.disabled) return;
+        const card = button.closest('.cfop-card');
+        const item = findAlgorithmItem(card);
+        if (!item) return;
+        const algorithms = storage.getAlgorithms(card.dataset.cat, item);
+        const index = Number(button.dataset.index);
+        if (!Number.isInteger(index) || index < 0 || index >= algorithms.length) return;
+        const action = button.dataset.algAction;
+        if (action === 'delete' && algorithms.length > 1) algorithms.splice(index, 1);
+        else if (action === 'primary') algorithms.unshift(...algorithms.splice(index, 1));
+        else {
+          const target = action === 'up' ? index - 1 : action === 'down' ? index + 1 : -1;
+          if (target < 0 || target >= algorithms.length) return;
+          [algorithms[index], algorithms[target]] = [algorithms[target], algorithms[index]];
+        }
+        saveCardAlgorithms(card, algorithms);
+      });
 
       // Sessions
       function renderSessionDropdown() {
@@ -2506,6 +2665,8 @@
             alert(`Đã khôi phục thành công ${res.count} sessions!`);
             elExportModal.classList.add('hidden');
             refreshSessionUI();
+            syncEntryMode();
+            renderMyAlgsView();
             updateScramble();
           } else {
             alert('Lỗi: ' + res.error);
@@ -2531,6 +2692,7 @@
 
       // Initial Boot
       applyTheme(storage.settings.theme);
+      syncEntryMode();
       timer.setState(TIMER_STATES.IDLE);
       refreshSessionUI();
       updateScramble();

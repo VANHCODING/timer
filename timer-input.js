@@ -1,0 +1,113 @@
+(function (root) {
+  'use strict';
+
+  const TimerInput = {
+    parseManualTime(value) {
+      const text = String(value).trim().replace(',', '.');
+      if (!/^(?:\d+:)?\d+(?:\.\d{1,3})?$/.test(text)) return null;
+      const parts = text.split(':');
+      const seconds = Number(parts.pop());
+      if (parts.length && seconds >= 60) return null;
+      const milliseconds = Math.round(((Number(parts[0] || 0) * 60) + seconds) * 1000);
+      return Number.isSafeInteger(milliseconds) && milliseconds > 0 ? milliseconds : null;
+    },
+
+    supportsTouch(host) {
+      return host.matchMedia?.('(hover: none) and (pointer: coarse)').matches === true;
+    },
+
+    bind({ element, host = window, timer, states, isBlocked = () => false }) {
+      if (!element || !timer) return () => {};
+
+      let isTouching = false;
+      let activePointerId = null;
+      let stoppedPointerId = null;
+
+      function shouldIgnore(e) {
+        if (isBlocked && isBlocked()) return true;
+        if (e.target && e.target.closest && e.target.closest('button, a, input, select, textarea, summary, [contenteditable]')) {
+          return true;
+        }
+        return false;
+      }
+
+      function onPointerDown(e) {
+        if (e.pointerType !== 'touch' || !TimerInput.supportsTouch(host)) return;
+        if (stoppedPointerId === e.pointerId) return;
+        if (shouldIgnore(e)) return;
+        if (timer.state === states.RUNNING) {
+          if (e.cancelable) e.preventDefault();
+          timer.stop();
+          return;
+        }
+
+        if (activePointerId !== null && activePointerId !== e.pointerId) return;
+
+        activePointerId = e.pointerId;
+        isTouching = true;
+
+        if (e.cancelable) e.preventDefault();
+        timer.handleHoldStart();
+      }
+
+      function onPointerUp(e) {
+        if (stoppedPointerId === e.pointerId) {
+          stoppedPointerId = null;
+          return;
+        }
+        if (activePointerId !== null && e.pointerId !== activePointerId) return;
+        activePointerId = null;
+
+        if (!isTouching) return;
+        isTouching = false;
+
+        if (isBlocked()) {
+          timer.cancelHold();
+          return;
+        }
+
+        if (timer.state === states.RUNNING) {
+          if (e.cancelable) e.preventDefault();
+          timer.stop();
+          return;
+        }
+
+        if (e.cancelable) e.preventDefault();
+        timer.handleHoldEnd();
+      }
+
+      function onPointerCancel(e) {
+        if (stoppedPointerId === e.pointerId) stoppedPointerId = null;
+        if (activePointerId !== null && e.pointerId !== activePointerId) return;
+        activePointerId = null;
+        if (!isTouching) return;
+        isTouching = false;
+        timer.cancelHold();
+      }
+
+      function onHostPointerDown(e) {
+        if (e.pointerType !== 'touch' || !TimerInput.supportsTouch(host) || shouldIgnore(e)) return;
+        stoppedPointerId = timer.state === states.RUNNING ? e.pointerId : null;
+        if (timer.state === states.RUNNING) {
+          if (e.cancelable) e.preventDefault();
+          timer.stop();
+        }
+      }
+
+      element.addEventListener('pointerdown', onPointerDown, { passive: false });
+      element.addEventListener('pointerup', onPointerUp, { passive: false });
+      element.addEventListener('pointercancel', onPointerCancel, { passive: false });
+      host.addEventListener('pointerdown', onHostPointerDown, { passive: false, capture: true });
+
+      return function unbind() {
+        element.removeEventListener('pointerdown', onPointerDown);
+        element.removeEventListener('pointerup', onPointerUp);
+        element.removeEventListener('pointercancel', onPointerCancel);
+        host.removeEventListener('pointerdown', onHostPointerDown, true);
+      };
+    }
+  };
+
+  if (typeof module !== 'undefined' && module.exports) module.exports = TimerInput;
+  else root.TimerInput = TimerInput;
+})(typeof window !== 'undefined' ? window : globalThis);
