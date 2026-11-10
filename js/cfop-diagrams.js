@@ -227,26 +227,40 @@
       ['F', 'R', 'B', 'L'].every(face => faceColors(standard, face).slice(3).every(color => color === face));
   }
 
-  function renderCard(item, category, learned, duplicates = []) {
-    const cacheKey = JSON.stringify([category, item, learned, duplicates]);
+  function renderCard(item, category, learned, duplicates = [], algorithms = [item.alg, ...(item.alternatives || [])]) {
+    const cacheKey = JSON.stringify([category, item, learned, duplicates, algorithms]);
     if (cardCache.has(cacheKey)) return cardCache.get(cacheKey);
 
     const diagram = category === 'oll' ? ollDiagram(item.alg, item.name) : category === 'pll' ? pllDiagram(item.alg, item.name) : f2lDiagram(item.alg, item.name, item.stickers, item.slot);
     const invalid = category === 'oll' ? !isOllState(caseState(item.alg)) : category === 'pll' && !isPllState(caseState(item.alg));
     const warning = invalid ? 'Cần kiểm tra công thức: trạng thái tạo ra chưa giữ nguyên hai tầng dưới hoặc không đúng loại case.' : '';
-    const result = `<article class="cfop-card${learned ? ' is-learned' : ''}" aria-label="${escapeHtml(item.name)}">
+    const result = `<article class="cfop-card${learned ? ' is-learned' : ''}" data-cat="${escapeHtml(category)}" data-id="${escapeHtml(item.id)}" aria-label="${escapeHtml(item.name)}">
       <header class="cfop-card-heading"><h3>${escapeHtml(item.name)}${item.slot && !item.name.startsWith('F2L BR ') ? `<span class="cfop-slot">${escapeHtml(item.slot)}</span>` : ''}</h3>
-        <div class="cfop-card-actions"><button class="btn-copy-card-alg" data-alg="${escapeHtml(item.alg)}" title="Sao chép công thức" aria-label="Sao chép công thức ${escapeHtml(item.name)}"><i data-lucide="copy"></i></button><button class="btn-toggle-learn cfop-learn" data-cat="${category}" data-id="${escapeHtml(item.id)}" aria-pressed="${learned}" title="${learned ? 'Đã thuộc · Bấm để bỏ đánh dấu' : 'Đánh dấu đã thuộc'}" aria-label="${learned ? 'Bỏ đánh dấu' : 'Đánh dấu đã thuộc'} ${escapeHtml(item.name)}"><i data-lucide="${learned ? 'check-circle-2' : 'circle'}"></i></button></div>
+        <div class="cfop-card-actions"><button class="btn-copy-card-alg" data-alg="${escapeHtml(algorithms[0])}" title="Sao chép công thức chính" aria-label="Sao chép công thức chính ${escapeHtml(item.name)}"><i data-lucide="copy"></i></button><button class="btn-toggle-learn cfop-learn" data-cat="${category}" data-id="${escapeHtml(item.id)}" aria-pressed="${learned}" title="${learned ? 'Đã thuộc · Bấm để bỏ đánh dấu' : 'Đánh dấu đã thuộc'}" aria-label="${learned ? 'Bỏ đánh dấu' : 'Đánh dấu đã thuộc'} ${escapeHtml(item.name)}"><i data-lucide="${learned ? 'check-circle-2' : 'circle'}"></i></button></div>
       </header>
       ${warning ? `<p class="cfop-warning">${warning}</p>` : ''}
       ${duplicates.length ? `<p class="cfop-warning">Cùng chuỗi động tác với ${duplicates.map(escapeHtml).join(', ')}. Cần đối chiếu lại tên case.</p>` : ''}
       <div class="cfop-card-body"><figure title="${category === 'f2l' ? `SVG · slot ${escapeHtml(item.slot || 'FR')} · U trên, F trước, R phải` : 'Nhìn từ trên · F ở dưới, R ở phải'}">${diagram}</figure>
-        <div class="cfop-formula"><div class="cfop-moves">${readableAlgorithm(item.alg)}</div></div>
+        <div class="cfop-formula"><div class="cfop-moves cfop-primary" aria-label="Công thức chính">${readableAlgorithm(algorithms[0])}</div>
+          ${algorithms.slice(1).map(algorithm => `<div class="cfop-secondary"><div class="cfop-moves" aria-label="Công thức phụ">${readableAlgorithm(algorithm)}</div><button type="button" class="btn-copy-card-alg" data-alg="${escapeHtml(algorithm)}" title="Sao chép công thức phụ" aria-label="Sao chép công thức phụ ${escapeHtml(item.name)}"><i data-lucide="copy"></i></button></div>`).join('')}
+        </div>
       </div>
-      <details class="cfop-details"><summary>Chi tiết${item.alternatives?.length ? ` · ${item.alternatives.length} cách khác` : ''}</summary>
-        ${item.group ? `<p>${escapeHtml(item.group)}</p>` : ''}${item.desc ? `<p>${escapeHtml(item.desc)}</p>` : ''}
-        ${(item.alternatives || []).map(algorithm => `<div class="cfop-alternative"><div class="cfop-moves">${readableAlgorithm(algorithm)}</div><button class="btn-copy-card-alg" data-alg="${escapeHtml(algorithm)}" title="Sao chép cách khác" aria-label="Sao chép cách khác của ${escapeHtml(item.name)}"><i data-lucide="copy"></i></button></div>`).join('')}
-        ${item.source ? `<p class="cfop-source">${escapeHtml(item.source)} · trang ${escapeHtml(item.page || 1)}</p>` : ''}
+      <details class="cfop-editor"><summary>Công thức bổ sung</summary>
+        <p class="cfop-editor-help">Công thức đầu tiên là chính. Đặt chính hoặc dùng mũi tên để sắp xếp.</p>
+        <ol class="cfop-variant-list">${algorithms.map((algorithm, index) => `<li>
+          <div class="cfop-variant-text"><span class="cfop-variant-role">${index === 0 ? 'Chính' : 'Phụ'}</span><span>${escapeHtml(algorithm)}</span></div>
+          <div class="cfop-variant-actions">
+            ${index > 0 ? `<button type="button" data-alg-action="primary" data-index="${index}" title="Đặt làm công thức chính">Đặt chính</button>` : ''}
+            <button type="button" data-alg-action="up" data-index="${index}" aria-label="Đưa công thức ${index + 1} lên" ${index === 0 ? 'disabled' : ''}><i data-lucide="arrow-up"></i></button>
+            <button type="button" data-alg-action="down" data-index="${index}" aria-label="Đưa công thức ${index + 1} xuống" ${index === algorithms.length - 1 ? 'disabled' : ''}><i data-lucide="arrow-down"></i></button>
+            <button type="button" data-alg-action="delete" data-index="${index}" aria-label="Xóa công thức ${index + 1}" ${algorithms.length === 1 ? 'disabled' : ''}><i data-lucide="trash-2"></i></button>
+          </div>
+        </li>`).join('')}</ol>
+        <form class="cfop-add-form">
+          <label>Nhập công thức bổ sung<textarea name="algorithm" rows="2" maxlength="1000" required spellcheck="false" placeholder="Ví dụ: R U R' U'" aria-label="Công thức bổ sung cho ${escapeHtml(item.name)}"></textarea></label>
+          <button type="submit">Thêm công thức</button>
+        </form>
+        <p class="cfop-editor-feedback" role="status" aria-live="polite"></p>
       </details>
     </article>`;
 

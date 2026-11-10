@@ -2,6 +2,16 @@
   'use strict';
 
   const TimerInput = {
+    parseManualTime(value) {
+      const text = String(value).trim().replace(',', '.');
+      if (!/^(?:\d+:)?\d+(?:\.\d{1,3})?$/.test(text)) return null;
+      const parts = text.split(':');
+      const seconds = Number(parts.pop());
+      if (parts.length && seconds >= 60) return null;
+      const milliseconds = Math.round(((Number(parts[0] || 0) * 60) + seconds) * 1000);
+      return Number.isSafeInteger(milliseconds) && milliseconds > 0 ? milliseconds : null;
+    },
+
     supportsTouch(host) {
       return host.matchMedia?.('(hover: none) and (pointer: coarse)').matches === true;
     },
