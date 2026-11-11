@@ -311,12 +311,13 @@
       <button id="close-cstimer-tool-btn" title="Đóng gợi ý" aria-label="Đóng gợi ý Cross + F2L"><i data-lucide="x"></i></button>
     </div>
     <div class="cross-hint-options">
-      <span>Cầm cube: <strong class="font-mono">z2</strong></span>
+      <span>Sau scramble: xoay <strong class="font-mono">z2</strong>, trắng xuống dưới</span>
       <select id="cstimer-tool-mode" aria-label="Nội dung gợi ý">
         <option value="cross-f2l">Cross + F2L</option>
         <option value="cross-only">Chỉ White Cross</option>
       </select>
     </div>
+    <p class="text-xs text-slate-500">Xáo: trắng trên, xanh lá trước. Giải: z2 rồi Cross → F2L 1–4. Chưa gồm OLL/PLL.</p>
     <div class="cross-hint-moves" tabindex="0" aria-label="Các bước giải Cross và F2L">
       <div class="cross-hint-row"><span>Cross</span><strong id="cstimer-cross">Đang tính toán...</strong></div>
       <div id="cstimer-f2l-container">
@@ -327,8 +328,8 @@
       </div>
     </div>
     <div class="cross-hint-actions">
-      <a id="cstimer-alg-link" href="#" target="_blank" rel="noopener noreferrer">alg.cubing.net <i data-lucide="external-link"></i></a>
-      <button id="cstimer-copy-btn" title="Sao chép toàn bộ công thức"><i data-lucide="copy"></i> Copy</button>
+      <a id="cstimer-alg-link" aria-disabled="true" target="_blank" rel="noopener noreferrer">alg.cubing.net <i data-lucide="external-link"></i></a>
+      <button id="cstimer-copy-btn" disabled title="Sao chép toàn bộ công thức"><i data-lucide="copy"></i> Copy</button>
     </div>
   </aside>
   </div>
@@ -553,6 +554,7 @@
   <script src="js/timer-input.js"></script>
   <script src="js/timer-display.js?v=20261103-perf"></script>
   <script src="js/wca-scrambler.js?v=20261103"></script>
+  <script src="js/cross-f2l-solver.js?v=20261111"></script>
   <script>
     function renderIcons() {
       if (window.lucide && typeof window.lucide.createIcons === 'function') {
@@ -560,146 +562,6 @@
       }
     }
 
-    // ==========================================
-    // 1. CROSS & F2L SOLVER MODULE
-    // ==========================================
-    const CYCLES = {
-      U: { c: [0, 1, 2, 3], flip: 0 },
-      D: { c: [8, 11, 10, 9], flip: 0 },
-      F: { c: [0, 7, 8, 4], flip: 1 },
-      B: { c: [2, 5, 10, 6], flip: 1 },
-      L: { c: [1, 4, 9, 5], flip: 0 },
-      R: { c: [3, 6, 11, 7], flip: 0 }
-    };
-    const OPPOSITE_FACES = { U: 'D', D: 'U', L: 'R', R: 'L', F: 'B', B: 'F' };
-    const FACE_ORDER = { U: 0, D: 1, L: 2, R: 3, F: 4, B: 5 };
-    const MOVES = [
-      'U', "U'", 'U2',
-      'D', "D'", 'D2',
-      'L', "L'", 'L2',
-      'R', "R'", 'R2',
-      'F', "F'", 'F2',
-      'B', "B'", 'B2'
-    ];
-
-    function applyTurn(ep, eo, face, amount) {
-      const { c, flip } = CYCLES[face];
-      const oldEp = [...ep];
-      const oldEo = [...eo];
-      for (let i = 0; i < 4; i++) {
-        const to = c[(i + amount) % 4];
-        const from = c[i];
-        ep[to] = oldEp[from];
-        eo[to] = (oldEo[from] + (amount % 2 !== 0 ? flip : 0)) % 2;
-      }
-    }
-
-    function applyMove(ep, eo, move) {
-      const face = move[0];
-      let amount = 1;
-      if (move.endsWith("'")) amount = 3;
-      else if (move.endsWith('2')) amount = 2;
-      applyTurn(ep, eo, face, amount);
-    }
-
-    function applyAlgorithm(ep, eo, alg) {
-      if (!alg) return;
-      const tokens = alg.trim().split(/\s+/).filter(Boolean);
-      for (const t of tokens) {
-        const clean = t.replace(/[^UDLRFB2']/g, '');
-        if (clean) applyMove(ep, eo, clean);
-      }
-    }
-
-    const WHITE_CROSS_TARGETS = [8, 9, 10, 11];
-
-    function isCrossSolved(ep, eo) {
-      for (const edge of WHITE_CROSS_TARGETS) {
-        if (ep[edge] !== edge || eo[edge] !== 0) return false;
-      }
-      return true;
-    }
-
-    function crossHeuristic(ep, eo) {
-      let unsolved = 0;
-      for (const edge of WHITE_CROSS_TARGETS) {
-        if (ep[edge] !== edge || eo[edge] !== 0) unsolved++;
-      }
-      return Math.ceil(unsolved / 2);
-    }
-
-    function solveCross(scramble, color = 'white', maxDepth = 8) {
-      const startTime = Date.now();
-      const ep = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
-      const eo = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-      applyAlgorithm(ep, eo, scramble);
-      
-      if (isCrossSolved(ep, eo)) {
-        return { solution: 'Đã hoàn thành', depth: 0, movesCount: 0, timeMs: Date.now() - startTime };
-      }
-
-      const movesStack = [];
-      function iddfs(curEp, curEo, depth, lastFace) {
-        const h = crossHeuristic(curEp, curEo);
-        if (h > depth) return false;
-        if (depth === 0) return isCrossSolved(curEp, curEo);
-
-        for (const m of MOVES) {
-          const face = m[0];
-          if (face === lastFace) continue;
-          if (OPPOSITE_FACES[face] === lastFace && FACE_ORDER[face] < FACE_ORDER[lastFace]) continue;
-
-          const nextEp = [...curEp];
-          const nextEo = [...curEo];
-          applyMove(nextEp, nextEo, m);
-
-          movesStack.push(m);
-          if (iddfs(nextEp, nextEo, depth - 1, face)) return true;
-          movesStack.pop();
-        }
-        return false;
-      }
-
-      for (let d = 1; d <= maxDepth; d++) {
-        if (iddfs(ep, eo, d, null)) {
-          return {
-            solution: movesStack.join(' '),
-            depth: d,
-            movesCount: movesStack.length,
-            timeMs: Date.now() - startTime
-          };
-        }
-        if (Date.now() - startTime > 1200) break;
-      }
-
-      return { solution: 'Không tìm thấy lời giải dưới 8 bước', depth: null, movesCount: 0, timeMs: Date.now() - startTime };
-    }
-
-    function solveCrossAndF2L(scramble) {
-      const crossRes = solveCross(scramble, 'white', 8);
-      const crossMoves = crossRes.solution || '';
-
-      const f2lPatterns = [
-        ["U R U' R'", "U' L' U L", "R U R' U' R U R'", "U' R U2 R' U2 R U' R'"],
-        ["L' U L R U' R'", "L B L B' L'", "R' U' B' U B R", "U L F U F' U2 L'"],
-        ["U' R U R' U2 R U' R'", "y' U R' U' R U2 R' U R", "R U2 R' U' R U R'", "U' L' U L U F' U' F"],
-        ["R U' R' U R U' R'", "y' R' U R U' R' U R", "U2 R U R' U R U' R'", "L' U' L U U' L' U L"]
-      ];
-      
-      let hash = 0;
-      for (let i = 0; i < scramble.length; i++) hash = (hash * 31 + scramble.charCodeAt(i)) & 0xffffffff;
-      const pIdx = Math.abs(hash) % f2lPatterns.length;
-      const pairs = f2lPatterns[pIdx];
-
-      return {
-        cross: crossMoves,
-        f2l1: pairs[0],
-        f2l2: pairs[1],
-        f2l3: pairs[2],
-        f2l4: pairs[3],
-        fullAlg: `z2\n// Cross\n${crossMoves}\n// F2L-1\n${pairs[0]}\n// F2L-2\n${pairs[1]}\n// F2L-3\n${pairs[2]}\n// F2L-4\n${pairs[3]}`
-      };
-    }
 
     // ==========================================
     // 2. SCRAMBLER MODULE
@@ -1624,6 +1486,7 @@
       let scrambleRequestId = 0;
       let historyListDirty = true;
       const scrambler = new WcaScrambler();
+      const crossF2LSolver = new CrossF2LSolver();
       let activeSolveModalId = null;
 
       const elHtml = document.documentElement;
@@ -1873,6 +1736,9 @@
         scrambleLoading = true;
         currentScrambleData = null;
         currentF2LResult = null;
+        elCsTimerCopyBtn.disabled = true;
+        elCsTimerAlgLink.removeAttribute('href');
+        elCsTimerAlgLink.setAttribute('aria-disabled', 'true');
         elScrambleBadge.textContent = badgeMap[puzzle];
         elScrambleBadge.title = 'csTimer · ' + ({ '222': '222so', '333': '333', '444': '444wca' })[puzzle];
         elScrambleText.textContent = 'Đang tạo scramble ' + badgeMap[puzzle] + '…';
@@ -1916,32 +1782,36 @@
         }
       }
 
-      // Calculate Cross + F2L (csTimer Style)
       let currentF2LResult = null;
-      function calculateCrossAndF2L(scramble) {
+      let hintRequestId = 0;
+      async function calculateCrossAndF2L(scramble) {
         if (!elCsTimerCross) return;
+        const requestId = ++hintRequestId;
+        const scrambleId = scrambleRequestId;
+        const isCurrent = () => requestId === hintRequestId && scrambleId === scrambleRequestId && currentPuzzle === '333' && currentScrambleData?.scramble === scramble;
+        currentF2LResult = null;
+        elCsTimerCopyBtn.disabled = true;
+        elCsTimerAlgLink.removeAttribute('href');
+        elCsTimerAlgLink.setAttribute('aria-disabled', 'true');
         elCsTimerCross.textContent = 'Đang tính toán...';
-        elCsTimerF2l1.textContent = '...';
-        elCsTimerF2l2.textContent = '...';
-        elCsTimerF2l3.textContent = '...';
-        elCsTimerF2l4.textContent = '...';
-
-        setTimeout(() => {
-          try {
-            const res = solveCrossAndF2L(scramble);
-            currentF2LResult = res;
-            elCsTimerCross.textContent = res.cross || 'Đã giải xong cross';
-            elCsTimerF2l1.textContent = res.f2l1;
-            elCsTimerF2l2.textContent = res.f2l2;
-            elCsTimerF2l3.textContent = res.f2l3;
-            elCsTimerF2l4.textContent = res.f2l4;
-
-            const url = `https://alg.cubing.net/?setup=${encodeURIComponent(scramble)}&alg=${encodeURIComponent(res.fullAlg)}`;
-            elCsTimerAlgLink.href = url;
-          } catch (e) {
-            elCsTimerCross.textContent = 'Lỗi tính toán';
-          }
-        }, 10);
+        [elCsTimerF2l1, elCsTimerF2l2, elCsTimerF2l3, elCsTimerF2l4].forEach(element => { element.textContent = '...'; });
+        try {
+          const result = await crossF2LSolver.solve(scramble);
+          if (!isCurrent()) return;
+          currentF2LResult = result;
+          elCsTimerCross.textContent = result.cross || 'Cross đã có sẵn';
+          [elCsTimerF2l1, elCsTimerF2l2, elCsTimerF2l3, elCsTimerF2l4].forEach((element, index) => {
+            const stage = result.stages[index];
+            element.textContent = (stage.algorithm || 'Đã có sẵn') + ' (' + stage.slot + ')';
+          });
+          elCsTimerCopyBtn.disabled = false;
+          elCsTimerAlgLink.href = elCsTimerToolMode.value === 'cross-only' ? result.crossUrl : result.url;
+          elCsTimerAlgLink.setAttribute('aria-disabled', 'false');
+        } catch (error) {
+          if (!isCurrent()) return;
+          elCsTimerCross.textContent = 'Không tính được lời giải. Đóng/mở gợi ý để thử lại.';
+          [elCsTimerF2l1, elCsTimerF2l2, elCsTimerF2l3, elCsTimerF2l4].forEach(element => { element.textContent = '—'; });
+        }
       }
 
       function toggleCsTimerTool() {
@@ -1967,6 +1837,7 @@
       });
 
       elCsTimerToolMode.addEventListener('change', () => {
+        if (currentF2LResult) elCsTimerAlgLink.href = elCsTimerToolMode.value === 'cross-only' ? currentF2LResult.crossUrl : currentF2LResult.url;
         if (elCsTimerToolMode.value === 'cross-only') {
           elCsTimerF2lContainer.classList.add('hidden');
         } else {
@@ -1976,11 +1847,8 @@
 
       elCsTimerCopyBtn.addEventListener('click', () => {
         if (currentF2LResult) {
-          let txt = `Orientation: z2\nCross:  ${currentF2LResult.cross}`;
-          if (elCsTimerToolMode.value !== 'cross-only') {
-            txt += `\nF2L-1:  ${currentF2LResult.f2l1}\nF2L-2:  ${currentF2LResult.f2l2}\nF2L-3:  ${currentF2LResult.f2l3}\nF2L-4:  ${currentF2LResult.f2l4}`;
-          }
-          navigator.clipboard.writeText(txt);
+          const algorithm = elCsTimerToolMode.value === 'cross-only' ? currentF2LResult.crossAlg : currentF2LResult.fullAlg;
+          navigator.clipboard.writeText('// Scramble: ' + currentF2LResult.scramble + '\n' + algorithm);
           elCsTimerCopyBtn.innerHTML = '<i data-lucide="check" class="w-3 h-3 text-emerald-400"></i> Copied!';
           renderIcons();
           setTimeout(() => {
